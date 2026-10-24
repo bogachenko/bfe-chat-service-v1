@@ -70,17 +70,16 @@ The C4 workspace models the existing administrative UI as an external caller and
 
 ## Verification status
 
-Automated validation passed on proposal commit `14cc0a6aed2f16f42f4f1970b929ae79228e09a9`:
+Validation of the updated requirements/C4 artifacts:
 
-- [Requirements and C1 validation, run 40127036347](https://github.com/bogachenko/bfe-chat-service/actions/runs/40127036347): **success**.
-- [Quality Gates, run 40127036387](https://github.com/bogachenko/bfe-chat-service/actions/runs/40127036387): **success**.
+- [Requirements and C1 validation, run 40129413833](https://github.com/bogachenko/bfe-chat-service/actions/runs/40129413833): **success** on commit `aa8d76a39caf90ad72e3da62dc945467d848fcad`.
 - XML parser: **PASS**; 82 IDs, all unique; 38 local references resolved; one historical external provenance reference retained.
-- Structurizr C1 parser: **PASS**, exit code 0.
-- Exact validated blobs: `RequirementsAnalysis.xml` = `9e384ac1ef82ff50862a48651684a3181b9b3be6`; `docs/architecture/c4/workspace.dsl` = `eebf34a85769b0b83a04bf7430cd515c4f0fd60a`.
-- Quality Gates passed the existing blocking Go quality gates and the workflow's changed-code mutation step.
+- Structurizr C1 parser: **PASS**.
+- Current exact artifact blobs: `RequirementsAnalysis.xml` = `7eca702eb8486717eaff98578fc9c5035480d13c`; `docs/architecture/c4/workspace.dsl` = `344e0d64ad4e49ff3cc5a9d465012acfa66e191f`.
+- [Quality Gates, run 40129261343](https://github.com/bogachenko/bfe-chat-service/actions/runs/40129261343): **success** on the preceding requirements-content commit `ca4803975ec9ccbd28f2448a048ccaa16e56943e`. The later commit `aa8d76a39caf90ad72e3da62dc945467d848fcad` only adds the recorded Project Owner decision URL to the XML provenance; its Quality Gates rerun [40129413890](https://github.com/bogachenko/bfe-chat-service/actions/runs/40129413890) was still running at the time of this report update.
+- No runtime ntfy integration test was executed because implementation is out of scope. Such a test is **not required for administrative Chat disablement**; active-stream termination evidence remains required only for membership/epoch revocation under the approved ISSUE32 semantics.
 
-These checks validate XML structure, references, C4 syntax, and the repository's automated quality gates. They do **not** prove that active ntfy streams stop within 30 seconds after membership/epoch revocation. No runtime ntfy integration test was executed because implementation is explicitly out of scope. This limitation does not block the administrative Chat-disable behavior, for which active-stream termination is not required. No runtime source, dependency, schema, production configuration, BFE Drive repository, or client application was changed.
-
+These checks validate XML structure, references, and C4 syntax. They do not prove active-stream termination after membership/epoch revocation. No runtime source, dependency, schema, production configuration, BFE Drive repository, or client application was changed.
 ## Remaining gates
 
 1. Confirm XML well-formedness, unique IDs, internal reference integrity, and Structurizr C1 validity for the updated artifacts.
