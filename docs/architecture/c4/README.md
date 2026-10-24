@@ -14,7 +14,7 @@ The approved GRACE XML documents remain the source of truth. This Structurizr wo
 - People → external BFE clients → HTTPS ingress → Chat Go service. **Never** Person → Chat Service directly.
 - Chat service → BFE Drive Internal Auth by private UDS. BFE Drive owns documents and their ACL; document ID/title in chat confer no document access.
 - Proposed admin flow: existing Admin UI → protected Chat Service API → administrative handler → Chat-owned PostgreSQL access state. Chat disablement does not deactivate a BFE account or revoke a BFE session; no periodic BFE-session validation is added.
-- The proposed 30-second limit concerns stopping active ntfy delivery after Chat-specific disablement or membership revocation. Upstream source evidence is not a substitute for a target-version integration test; active-stream termination remains a Human Approval gate.
+- Chat-specific administrative disablement blocks new Chat operations, history requests and subscriptions but does not require closing already-active ntfy subscriptions; these may continue receiving only opaque wakeTokens. The 30-second active-stream termination limit applies only to membership/epoch revocation, preserving the approved ISSUE32 membership semantics. Upstream source evidence is not a substitute for a target-version integration test; membership-revocation stream termination remains a Human Approval gate.
 - PostgreSQL is a **Chat-owned database**, not a new separate software product. The database model does not imply a separate physical VPS.
 - `MC25-*` components in C3 are **logical groupings** within `internal/issue25`, not standalone deployed services.
 - Nginx test topology is runtime evidence, not a change to the approved requirements.
