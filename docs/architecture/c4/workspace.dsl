@@ -9,7 +9,7 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
         chatConsumers = softwareSystem "External Chat consumers" "Consumers of Chat Service APIs; implementation and transport migration are outside this service-only requirements revision (EXT-CHAT-CONSUMERS)." {
             tags "External"
         }
-        adminUI = softwareSystem "BFE administrative UI" "External administrative interface for legacy assignments and read-only auditing; implementation is outside this service-only requirements revision (EXT-ADMIN-UI)." {
+        adminUI = softwareSystem "BFE administrative UI" "Existing external administrative interface for legacy assignments, read-only auditing, and proposed Chat-specific access disable/enable requests. The UI is not modified by RA36-001 (EXT-ADMIN-UI)." {
             tags "External"
         }
         ntfy = softwareSystem "ntfy" "Proposed target realtime wake-up transport for RA36-001. Chat Service publishes minimal wake-up signals; ntfy owns no message history or Chat authorization. Centrifuge remains effective until Human Approval." {
@@ -26,6 +26,7 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
             app = container "Chat Go service" "One Go executable. Current approved baseline embeds Centrifuge; proposed RA36-001 target replaces it with ntfy pending Human Approval." "Go" {
                 transport = component "Transport — MC-08 / MC25-08" "Routes /v1 legacy, /v2 conversations and /ws; validates request envelopes." "internal/transport, internal/issue25/http.go"
                 auth = component "Identity and access — MC-01 / MC-04 / MC25-01" "Validates BFE sessions with DPoP/UDS; checks current chat-specific permissions." "internal/authentication, internal/authorization, internal/issue25"
+                adminAccess = component "Administrative Chat access handler — RA36-001" "Proposed handler: authorizes admin request, persists Chat-only enabled/disabled state in bfe_chat, and requests active ntfy subscription revocation. Does not revoke BFE sessions or add periodic session checks." "proposed service-side responsibility; not implemented"
                 legacy = component "Legacy assignments and conversations — MC-02 / MC-03" "Maintains explicitly assigned legacy owner conversations." "internal/assignments, internal/conversations"
                 lifecycle = component "Direct/group lifecycle — MC25-02" "Creates canonical direct pairs and groups; manages personal hide state." "internal/issue25"
                 membership = component "Membership and roles — MC25-03" "Manages membership intervals, epochs, owner transfer and role changes." "internal/issue25"
@@ -37,6 +38,10 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
                 persistence = component "Chat persistence — MC-07" "Chat-owned SQL transactions and goose startup migrations; no Drive table access." "internal/storage, internal/issue25"
 
                 transport -> auth "Authenticate request"
+                transport -> adminAccess "Route administrative Chat access API (proposed)"
+                adminAccess -> auth "Authenticate administrator via existing Internal Auth/DPoP"
+                adminAccess -> persistence "Persist Chat-specific access state in PostgreSQL bfe_chat"
+                adminAccess -> ntfy "Request revocation of active subscriptions (target integration proof required)"
                 transport -> legacy "Legacy API"
                 transport -> lifecycle "Conversation operations"
                 transport -> membership "Membership/role operations"
@@ -56,6 +61,7 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
                 transition -> persistence "Preserve legacy provenance"
                 realtime -> auth "Validate subscriber"
                 realtime -> membership "Check current membership epoch"
+                realtime -> persistence "Check Chat-specific access state before new operations/subscriptions/publication"
                 realtime -> ntfy "Publish opaque wake-up envelope (proposed RA36-001 target only)"
             }
             database = container "bfe_chat database" "Stores legacy and Issue #25 conversations, membership intervals, messages and read markers." "PostgreSQL 18" {
@@ -68,21 +74,21 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
 
         user -> chatConsumers "Chat and document actions"
         employee -> chatConsumers "Assigned legacy conversations"
-        admin -> adminUI "Administrative operations"
+        admin -> adminUI "Manage assignments and Chat-specific access"
         chatConsumers -> chat.ingress "Send Chat API requests" "HTTPS, DPoP"
         chatConsumers -> drive "Open/download documents under Drive ACL" "HTTPS"
         
-        adminUI -> chat.ingress "Administrative API operations" "HTTPS, DPoP"
+        adminUI -> chat.ingress "Disable/enable Chat-specific access" "HTTPS, existing DPoP contract"
     }
 
     views {
         systemContext chat "requirements-c1-context" {
-            description "Service-only view of BFE Chat Service and its direct dependencies. External consumer implementations and their subscription wiring are outside this revision. ntfy is shown only as the proposed service-side publication dependency and is not effective before Human Approval."
+            description "Service-only view. The proposed administrative flow is Admin UI → protected Chat API → administrative handler → Chat-owned PostgreSQL access state. Disabling Chat does not revoke BFE Drive sessions or add periodic session checks. ntfy active-stream termination remains subject to target-version integration proof; this proposal is not effective before Human Approval."
             include *
             autolayout lr
         }
         container chat "technology-development-c2-containers" {
-            description "Current approved ISSUE32 baseline: one Go service with embedded Centrifuge, PostgreSQL and Drive Internal Auth. Proposed RA36-001 target replaces Centrifuge with ntfy only after Human Approval."
+            description "Current approved ISSUE32 baseline: one Go service with embedded Centrifuge, PostgreSQL and Drive Internal Auth. Proposed RA36-001 target replaces Centrifuge with ntfy only after Human Approval and adds Chat-specific administrative access state in PostgreSQL; BFE Drive session behavior remains unchanged."
             include *
             autolayout lr
         }
