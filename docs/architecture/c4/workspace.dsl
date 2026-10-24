@@ -26,7 +26,7 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
             app = container "Chat Go service" "One Go executable. Current approved baseline embeds Centrifuge; proposed RA36-001 target replaces it with ntfy pending Human Approval." "Go" {
                 transport = component "Transport — MC-08 / MC25-08" "Routes /v1 legacy, /v2 conversations and /ws; validates request envelopes." "internal/transport, internal/issue25/http.go"
                 auth = component "Identity and access — MC-01 / MC-04 / MC25-01" "Validates BFE sessions with DPoP/UDS; checks current chat-specific permissions." "internal/authentication, internal/authorization, internal/issue25"
-                adminAccess = component "Administrative Chat access handler — RA36-001" "Proposed handler: authorizes admin request, persists Chat-only enabled/disabled state in bfe_chat, and requests active ntfy subscription revocation. Does not revoke BFE sessions or add periodic session checks." "proposed service-side responsibility; not implemented"
+                adminAccess = component "Administrative Chat access handler — RA36-001" "Proposed handler: authorizes admin request and persists Chat-only enabled/disabled state in bfe_chat. Existing ntfy subscriptions may continue receiving only opaque wakeTokens after disablement; HTTP/history access remains denied. Does not revoke BFE sessions or add periodic session checks." "proposed service-side responsibility; not implemented"
                 legacy = component "Legacy assignments and conversations — MC-02 / MC-03" "Maintains explicitly assigned legacy owner conversations." "internal/assignments, internal/conversations"
                 lifecycle = component "Direct/group lifecycle — MC25-02" "Creates canonical direct pairs and groups; manages personal hide state." "internal/issue25"
                 membership = component "Membership and roles — MC25-03" "Manages membership intervals, epochs, owner transfer and role changes." "internal/issue25"
@@ -41,7 +41,7 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
                 transport -> adminAccess "Route administrative Chat access API (proposed)"
                 adminAccess -> auth "Authenticate administrator via existing Internal Auth/DPoP"
                 adminAccess -> persistence "Persist Chat-specific access state in PostgreSQL bfe_chat"
-                adminAccess -> ntfy "Request revocation of active subscriptions (target integration proof required)"
+                membership -> ntfy "Request active-subscription revocation on membership/epoch change (target integration proof required)"
                 transport -> legacy "Legacy API"
                 transport -> lifecycle "Conversation operations"
                 transport -> membership "Membership/role operations"
@@ -83,7 +83,7 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
 
     views {
         systemContext chat "requirements-c1-context" {
-            description "Service-only view. The proposed administrative flow is Admin UI → protected Chat API → administrative handler → Chat-owned PostgreSQL access state. Disabling Chat does not revoke BFE Drive sessions or add periodic session checks. ntfy active-stream termination remains subject to target-version integration proof; this proposal is not effective before Human Approval."
+            description "Service-only view. The proposed administrative flow is Admin UI → protected Chat API → administrative handler → Chat-owned PostgreSQL access state. Disabling Chat denies new Chat operations, history requests and subscriptions but does not require terminating already-active ntfy subscriptions; those may continue receiving only opaque wakeTokens, while the authorized history API denies access until re-enabled. The separate membership/epoch active-stream revocation requirement remains subject to target-version integration proof. This proposal is not effective before Human Approval."
             include *
             autolayout lr
         }
