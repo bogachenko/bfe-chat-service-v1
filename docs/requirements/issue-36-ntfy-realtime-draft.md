@@ -68,9 +68,16 @@ The C4 workspace models the existing administrative UI as an external caller and
 
 ## Verification status
 
-The updated requirements and C4 workspace must pass the PR's XML/reference-integrity and Structurizr C1 validation workflows on the new artifact revision. These checks establish document integrity and diagram validity only; they do not prove runtime revocation timing.
+Automated validation passed on proposal commit `14cc0a6aed2f16f42f4f1970b929ae79228e09a9`:
 
-No runtime source, dependency, schema, production configuration, BFE Drive repository, or client application was changed. No runtime integration test was executed because implementation is explicitly out of scope.
+- [Requirements and C1 validation, run 40127036347](https://github.com/bogachenko/bfe-chat-service/actions/runs/40127036347): **success**.
+- [Quality Gates, run 40127036387](https://github.com/bogachenko/bfe-chat-service/actions/runs/40127036387): **success**.
+- XML parser: **PASS**; 82 IDs, all unique; 38 local references resolved; one historical external provenance reference retained.
+- Structurizr C1 parser: **PASS**, exit code 0.
+- Exact validated blobs: `RequirementsAnalysis.xml` = `9e384ac1ef82ff50862a48651684a3181b9b3be6`; `docs/architecture/c4/workspace.dsl` = `eebf34a85769b0b83a04bf7430cd515c4f0fd60a`.
+- Quality Gates passed the existing blocking Go quality gates and the workflow's changed-code mutation step.
+
+These checks validate XML structure, references, C4 syntax, and the repository's automated quality gates. They do **not** prove that active ntfy streams stop within 30 seconds. No runtime ntfy integration test was executed because implementation is explicitly out of scope. No runtime source, dependency, schema, production configuration, BFE Drive repository, or client application was changed.
 
 ## Remaining gates
 
