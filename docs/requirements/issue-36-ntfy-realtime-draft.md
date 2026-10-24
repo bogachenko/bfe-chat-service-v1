@@ -21,11 +21,11 @@ The required service-side flow is:
 1. An administrator uses the existing external administrative UI to request disablement or re-enablement of Chat access for a target BFE account UUID.
 2. The Chat Service API uses the existing protected HTTP authentication path: Internal Auth over UDS plus DPoP, followed by server-side administrative authorization.
 3. The handler persists the Chat-specific enabled/disabled state in Chat-owned PostgreSQL `bfe_chat`. The representation (for example, table or column) and exact API route are implementation details for a later approved stage.
-4. After the disablement commit, new non-administrative Chat operations and new ntfy subscriptions are denied; the disabled account is excluded from new protected notification publication.
-5. The service invokes its selected ntfy access-revocation mechanism. Existing active subscriptions must stop receiving protected notifications within 30 seconds of the successful database commit.
-6. Re-enabling Chat changes only Chat-owned access state, subject to current membership. It does not create, restore, or revoke a BFE Drive session.
+4. After the disablement commit, new non-administrative Chat operations, history requests and new ntfy subscriptions are denied.
+5. An already-active ntfy subscription is not forcibly terminated and may continue receiving only the minimal opaque wakeToken. Chat disablement alone does not require suppressing publication to an existing subscription or enforcing a delivery deadline. The wakeToken contains no message content or identifying metadata and does not authorize history/API access.
+6. Re-enabling Chat changes only Chat-owned access state, subject to current membership. The client can then retrieve messages accumulated during disablement through the existing authorized history API. Re-enabling does not create, restore, or revoke a BFE Drive session.
 
-The API must not report a successful completed disablement if the Chat state was not persisted. Failure to establish active-stream termination must remain observable and must not cause the service to fail open. The requirement does not authorize a new external client implementation; this revision specifies the service-side contract and models the existing UI as an external caller.
+The API must not report a successful completed disablement if the Chat state was not persisted. Existing Internal Auth/DPoP validation and history authorization remain authoritative. The requirement does not authorize a new external client implementation; this revision specifies the service-side contract and models the existing UI as an external caller.
 
 ## Requirements and acceptance
 
@@ -35,36 +35,38 @@ Acceptance must demonstrate all of the following:
 
 - Authorized administrator → API → handler → PostgreSQL state-change trace.
 - Unauthorized administrative requests cannot change the target account's Chat state.
-- After disablement commits, new Chat operations, new subscriptions, and protected notification publication for the disabled account are denied.
+- After disablement commits, new Chat operations, history requests, and new subscriptions are denied.
+- An already-active subscription may continue receiving only opaque wakeTokens; this does not authorize history/API access or expose message contents.
+- After re-enablement, the client can retrieve messages accumulated during disablement through the authorized history API.
 - A still-valid BFE session is not revoked or changed by the Chat-disable operation.
 - The existing Internal Auth/DPoP contract and per-request session validation remain unchanged; no periodic session-check loop is added.
-- Already-active ntfy delivery ceases within the proposed 30-second bound.
+- No active-stream termination deadline applies to Chat-specific administrative disablement. The separate 30-second limit remains only for membership/epoch revocation under the approved ISSUE32 membership semantics.
 - Re-enabling Chat does not create or revoke a BFE Drive session.
 - The UI, BFE Drive, and other client applications are not modified by this PR.
 
-The bound is measured from **t0 = successful PostgreSQL commit** of the Chat access/membership change. A reproducible test must keep a subscriber connection open, publish synthetic protected wake-up events continuously, record event and connection timestamps, and prove that no protected event is delivered after **t0 + 30 seconds**. It must also verify that new subscriptions are denied and that an old membership epoch remains unusable after rejoin.
+The 30-second membership-revocation bound is measured from **t0 = successful PostgreSQL commit** of membership removal or membership-epoch revocation, not administrative Chat disablement. A reproducible test must keep a subscriber connection open, publish synthetic protected wake-up events continuously, record event and connection timestamps, and prove that delivery to the revoked membership epoch stops after **t0 + 30 seconds**. It must also verify that new subscriptions for the revoked membership are denied and that an old membership epoch remains unusable after rejoin. Chat disablement has a separate acceptance test: API/history requests and new subscriptions are denied, while an existing subscription may continue receiving only opaque wakeTokens.
 
-## Active ntfy subscription revocation: evidence and limitation
+## Active ntfy subscription revocation for membership changes
 
-There is upstream implementation evidence that ntfy can forcibly terminate active subscriptions in a specific version:
+The 30-second active-stream requirement applies only to membership removal or membership-epoch revocation, preserving the approved ISSUE32 membership semantics. It does not apply to administrative Chat disablement: an existing subscription may continue receiving opaque wakeTokens while API/history access is denied. There is upstream implementation evidence that ntfy can forcibly terminate active subscriptions in a specific version:
 
 - [ntfy v2.29.0 administrative handlers](https://github.com/binwiederhier/ntfy/blob/v2.29.0/server/server_admin.go#L133-L203): user deletion calls `killUserSubscriber` for all topics; access reset also calls the cancellation path for affected topics.
 - [ntfy v2.29.0 active-stream test](https://github.com/binwiederhier/ntfy/blob/v2.29.0/server/server_admin_test.go#L428-L460): `TestAccess_AllowReset_KillConnection` verifies that an already-open stream is terminated after access reset.
 - [ntfy v2.29.0 account deletion stream test](https://github.com/binwiederhier/ntfy/blob/v2.29.0/server/server_account_test.go#L529-L552): the test checks that deleting an account ends its active stream.
 
-This is evidence of a capability in that upstream version, **not proof that the proposed bfe-chat-service integration meets the 30-second bound**. The target ntfy version, configuration, mapping between Chat accounts and ntfy identities, and error-handling behavior have not been selected and validated as a complete integration. The exact service-side integration test remains required. An ACL/token update alone must not be treated as proof unless an already-open stream is observed to stop receiving protected events.
+This is evidence of a capability in that upstream version, **not proof that the proposed bfe-chat-service integration meets the 30-second membership-revocation bound**. The target ntfy version, configuration, mapping between Chat memberships and ntfy identities, and error-handling behavior have not been selected and validated as a complete integration. The exact service-side integration test remains required for membership/epoch revocation. No equivalent stream-termination test or mechanism is required for administrative Chat disablement. An ACL/token update alone must not be treated as proof unless an already-open stream is observed to stop receiving protected events after membership revocation.
 
 ## Session and membership semantics
 
 - Every new protected Chat HTTP request continues to use the existing Internal Auth UDS + DPoP path.
 - Every new subscription continues to be checked against the existing session-validation boundary and current Chat membership/epoch.
-- Administrative Chat disablement and membership/epoch revocation trigger Chat-specific access denial and active-stream termination.
+- Administrative Chat disablement denies new Chat operations, history requests and new subscriptions but does not require terminating an already-active ntfy stream; opaque wakeTokens may continue to arrive. Membership/epoch revocation separately triggers active-stream termination within the proposed bound.
 - Independent BFE-session expiry/revocation continues to be governed by the existing request-time Internal Auth/DPoP behavior. This requirements revision does not add a guarantee that an already-open ntfy stream is terminated solely because a BFE session expires, since that would require a new signal or periodic check not authorized by the current scope.
 - Chat membership, Chat access state, and ntfy access never grant BFE Drive document permissions. Document open/download remains independently authorized by BFE Drive.
 
 ## C4 alignment
 
-The C4 workspace models the existing administrative UI as an external caller and the proposed service-side path through the Chat API, administrative handler, and Chat-owned PostgreSQL state. It explicitly states that this is a requirements proposal, not an implemented component. The ntfy active-stream revocation edge is marked as requiring target integration evidence. The existing BFE Drive Internal Auth/DPoP boundary is unchanged.
+The C4 workspace models the existing administrative UI as an external caller and the proposed service-side path through the Chat API, administrative handler, and Chat-owned PostgreSQL state. It explicitly states that this is a requirements proposal, not an implemented component. The ntfy active-stream revocation edge applies to membership/epoch changes only and is marked as requiring target integration evidence. Chat-specific administrative disablement does not require that edge to be invoked. The existing BFE Drive Internal Auth/DPoP boundary is unchanged.
 
 ## Verification status
 
@@ -77,12 +79,12 @@ Automated validation passed on proposal commit `14cc0a6aed2f16f42f4f1970b929ae79
 - Exact validated blobs: `RequirementsAnalysis.xml` = `9e384ac1ef82ff50862a48651684a3181b9b3be6`; `docs/architecture/c4/workspace.dsl` = `eebf34a85769b0b83a04bf7430cd515c4f0fd60a`.
 - Quality Gates passed the existing blocking Go quality gates and the workflow's changed-code mutation step.
 
-These checks validate XML structure, references, C4 syntax, and the repository's automated quality gates. They do **not** prove that active ntfy streams stop within 30 seconds. No runtime ntfy integration test was executed because implementation is explicitly out of scope. No runtime source, dependency, schema, production configuration, BFE Drive repository, or client application was changed.
+These checks validate XML structure, references, C4 syntax, and the repository's automated quality gates. They do **not** prove that active ntfy streams stop within 30 seconds after membership/epoch revocation. No runtime ntfy integration test was executed because implementation is explicitly out of scope. This limitation does not block the administrative Chat-disable behavior, for which active-stream termination is not required. No runtime source, dependency, schema, production configuration, BFE Drive repository, or client application was changed.
 
 ## Remaining gates
 
 1. Confirm XML well-formedness, unique IDs, internal reference integrity, and Structurizr C1 validity for the updated artifacts.
-2. Keep Human Approval blocked until the target ntfy version/configuration and the bfe-chat-service integration demonstrate active-stream termination within 30 seconds after Chat disablement or membership revocation.
-3. If the bound cannot be demonstrated, obtain an explicit Project Owner decision before changing it.
+2. Keep Human Approval blocked until the target ntfy version/configuration and the bfe-chat-service integration demonstrate active-stream termination within 30 seconds after membership/epoch revocation only. Administrative Chat disablement is not subject to this bound.
+3. If the membership-revocation bound cannot be demonstrated, obtain an explicit Project Owner decision before changing it.
 4. Keep PR #38 unmerged until Human Approval and distinct Independent QA acknowledgement.
 5. Only after requirements approval, update and independently verify dependent GRACE artifacts in order. Implementation, dependency changes, database operations, production configuration, and deployment remain blocked until their respective GRACE gates pass.
