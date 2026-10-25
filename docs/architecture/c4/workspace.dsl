@@ -65,9 +65,9 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
         user -> clients "Chat and document actions"
         employee -> clients "Assigned legacy conversations"
         admin -> clients "Administrative operations"
-        clients -> chat.ingress "Use authoritative HTTP Chat API; current approved baseline also exposes Centrifuge /ws, which this draft proposes replacing with ntfy" "HTTPS + DPoP for HTTP; target realtime auth OPEN"
+        clients -> chat.ingress "Use authoritative HTTP Chat API for history and a separately authorized wakeToken-to-conversation lookup; current approved baseline exposes Centrifuge /ws, which this draft proposes replacing with ntfy" "HTTPS + session-bound DPoP; lookup contract OPEN"
         chat -> ntfy "Publish minimal post-commit wake-up signals for server-authorized recipients" "ntfy publish API; credentials/topic ACL/retry contract OPEN"
-        clients -> ntfy "Subscribe to minimal authorized wakeToken signals. BFE Android Client owns its system notification; ntfy-app notifications do not satisfy that requirement. Background delivery is conditional on client lifecycle and is not guaranteed." "ntfy stream; FGS candidate and Android/Google Play policy OPEN"
+        clients -> ntfy "Subscribe to wake-up signals. BFE application data contains only opaque wakeToken; ntfy envelope metadata is transport-only. BFE Android Client owns system notifications; tapping resolves the corresponding conversation through a separate authorized HTTP lookup." "ntfy stream; FGS/Google Play eligibility and lookup contract OPEN"
         clients -> drive "Open/download documents under Drive ACL" "HTTPS"
     }
 
