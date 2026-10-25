@@ -212,12 +212,12 @@ The existing subscription may continue receiving only the opaque `wakeToken` whi
 
 - Repository/branch: `bogachenko/bfe-chat-service` / `docs/issue-36-ntfy-realtime-requirements-draft`.
 - PR: [#37](https://github.com/bogachenko/bfe-chat-service/pull/37), remains open and draft.
-- **Validation commit/HEAD:** `ba8f4cb0aa191bd323bd7f58267ca2e8c431670a`.
-- `RequirementsAnalysis.xml` blob: `9b7dec7a337878267a2d7d567f05c7a05725725a`.
+- **Validation commit/HEAD:** `530259158e70ab36c9d173e993e4864e4ae54e79`.
+- `RequirementsAnalysis.xml` blob: `e36a1d65a38aafbb7a30654b4724e0caaa0dc7b3`.
 - C1 `docs/architecture/c4/workspace.dsl` blob: `a1c87d50ddd2ad139be7d9e395fc044c2327f682` (unchanged).
-- GitHub Actions: [run 40208796934](https://github.com/bogachenko/bfe-chat-service/actions/runs/40208796934) — **success** on the exact validation commit and XML/C1 blobs above.
+- GitHub Actions: [run 40208985608](https://github.com/bogachenko/bfe-chat-service/actions/runs/40208985608) — **success** on the exact validation commit and XML/C1 blobs above.
 - XML parser: **PASS**, exit code 0; root `REQUIREMENTS_ANALYSIS`; 117 IDs, 117 unique, 0 duplicates; 360 local references resolved; one historical external provenance reference retained.
 - Structurizr C1 parser: **PASS**, exit code 0; pinned image digest `sha256:721136283c2f9cf1ba69037bc9de136c579d66fdcb2d771cb60546ec68def1a5`.
 - Independent QA: **NOT RUN**. Human Approval: **NOT GRANTED**.
-- Technology, implementation, migration and deployment: **BLOCKED**. `OQ36-NTFY-12` remains blocking pending Project Owner approval of the proposed 30-day TTL/reuse policy, Internal Auth logout-revocation confirmation, and approved downstream uniqueness/expiry enforcement.
-- This section is a report-only update after validation. It does not change the validated XML/C1 blobs; the PR head may advance for this Markdown-only commit. Historical validation records above remain preserved and are not presented as current evidence.
+- Technology, implementation, migration and deployment: **BLOCKED**. `OQ36-NTFY-12` remains blocking pending Project Owner approval of the proposed 30-day TTL/reuse policy, Internal Auth logout-revocation confirmation, proof of the Chat-disabled enforcement path, and approved downstream uniqueness/expiry enforcement.
+- The Markdown report was updated after validation; those report-only commits do not change the validated XML/C1 blobs. Historical validation records above remain preserved and are not presented as current evidence.
