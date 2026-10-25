@@ -68,7 +68,7 @@ Official evidence: [Android Doze](https://developer.android.com/training/monitor
 | OQ36-NTFY-03 | Backend and ntfy infrastructure owners | Active subscriber removal/rejoin tests; approved revocation bound demonstrated |
 | OQ36-NTFY-04 | Flutter Web and backend owners | Browser matrix, CORS and credential-leak tests; supported auth flow works without URL credentials |
 | OQ36-NTFY-05 | Flutter Android owner and Project Owner | Evidence for the exact FGS type, manifest permissions/subtype, visible/stoppable notification, Google Play declaration/review, and device matrix including Doze, process death, reboot and force-stop |
-| OQ36-NTFY-06 | Backend and Flutter owners | Versioned schema, event IDs/cursors, dedupe/gap examples; deterministic reconciliation approved |
+| OQ36-NTFY-06 | Backend and Flutter owners | Confirm stable persisted message identity/order and cursor pagination in the current HTTP history API; if missing, approve an upstream contract requirement before implementation; never infer cursor/order from ntfy metadata |
 | OQ36-NTFY-07 | Backend owner and Project Owner | Failure analysis, retry/outbox and telemetry tests; persisted send independent of ntfy |
 | OQ36-NTFY-08 | Project Owner, Release Manager and client maintainers | Deployed dependency inventory and rollout/rollback plan; production impact evidenced |
 | OQ36-NTFY-09 | Project Owner | RESOLVED — target-direction decision recorded in [Issue #36 comment](https://github.com/bogachenko/bfe-chat-service/issues/36#issuecomment-6385730270); draft approval remains blocked by other gates |
@@ -145,3 +145,17 @@ The report-only follow-up does not change the validated XML or C1 blobs. No prod
 ## Administrative Chat disablement — cross-component decision (2026-10-24)
 
 The existing subscription may continue receiving only the opaque `wakeToken` while Chat is administratively disabled. No new Chat operations, history requests or subscriptions are allowed while disabled. Re-enabling Chat triggers authorized history catch-up. This administrative state is distinct from membership-epoch/session revocation and does not add periodic BFE-session checks or Drive callbacks.
+
+
+## Latest validation evidence (2026-10-25)
+
+- Repository/branch: `bogachenko/bfe-chat-service` / `docs/issue-36-ntfy-realtime-requirements-draft`.
+- PR: [#37](https://github.com/bogachenko/bfe-chat-service/pull/37), remains draft.
+- Validated HEAD: `c957032af62ea024470a7d2a1d692b78f8a3834c`.
+- `RequirementsAnalysis.xml` blob: `49f39c7d1567e05b09f355644d20371fb62e6b8e`.
+- C1 `workspace.dsl` blob: `a4e303085b83c61c10409ce63cc83518cdb62efb`.
+- Workflow: [run 40192915559](https://github.com/bogachenko/bfe-chat-service/actions/runs/40192915559) — **success**.
+- XML parser: **PASS**; root `REQUIREMENTS_ANALYSIS`; 111 IDs, 111 unique, 0 duplicates; 322 local references resolved; one historical approval reference retained as external provenance.
+- Structurizr C1 parser: **PASS**, exit code 0, pinned image digest `sha256:721136283c2f9cf1ba69037bc9de136c579d66fdcb2d771cb60546ec68def1a5`.
+- Independent QA: **NOT RUN**. Human Approval: **NOT GRANTED**. Technology, implementation and deployment remain **BLOCKED**.
+- This report update does not change the validated XML or C1 blobs. It does not approve the requirements or establish Google Play eligibility.
