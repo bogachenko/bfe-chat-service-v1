@@ -1,0 +1,85 @@
+name: PostgreSQL 18.4 Goose migration validation
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-18-4-goose-migrations:
+    name: Goose v3.28.0 on PostgreSQL 18.4
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: bfe
+          POSTGRES_PASSWORD: test_only_password
+          POSTGRES_DB: bfe_chat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bfe -d bfe_chat"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      BFE_CHAT_TEST_DATABASE_URL: postgres://bfe:test_only_password@localhost:5432/bfe_chat?sslmode=disable
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Go from go.mod
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Verify PostgreSQL 18.4 and clean database
+        shell: bash
+        run: |
+          server_version="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc 'SHOW server_version')"
+          server_version_num="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc 'SHOW server_version_num')"
+          printf 'PostgreSQL server_version=%s server_version_num=%s\n' "$server_version" "$server_version_num"
+          test "$server_version" = "18.4"
+          test "$server_version_num" = "180004"
+
+          public_tables="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")"
+          printf 'Initial public base tables=%s\n' "$public_tables"
+          test "$public_tables" = "0"
+
+      - name: Verify the exact five migration files
+        shell: bash
+        run: |
+          expected_files="$(printf '%s\n' \
+            00001_chat_schema.sql \
+            00002_atomic_operations.sql \
+            00003_issue25_schema.sql \
+            00004_issue25_attempt_guard.sql \
+            00005_issue25_epoch_channel.sql | sort)"
+          actual_files="$(find internal/storage/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort)"
+          printf 'Expected migration files:\n%s\nActual migration files:\n%s\n' "$expected_files" "$actual_files"
+          test "$actual_files" = "$expected_files"
+
+      - name: Apply all migrations with Goose v3.28.0
+        run: go run github.com/pressly/goose/v3/cmd/goose@v3.28.0 -dir internal/storage/migrations postgres "$BFE_CHAT_TEST_DATABASE_URL" up
+
+      - name: Verify Goose status has no pending migrations
+        shell: bash
+        run: |
+          status_output="$(go run github.com/pressly/goose/v3/cmd/goose@v3.28.0 -dir internal/storage/migrations postgres "$BFE_CHAT_TEST_DATABASE_URL" status)"
+          printf '%s\n' "$status_output"
+          if printf '%s\n' "$status_output" | grep -Eiq '(^|[[:space:]])Pending([[:space:]]|$)'; then
+            echo "::error::Goose reports pending migrations."
+            exit 1
+          fi
+
+      - name: Assert all five Goose migration versions are applied
+        shell: bash
+        run: |
+          applied_versions="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc "SELECT string_agg(version_id::text, ',' ORDER BY version_id) FROM (SELECT DISTINCT version_id FROM goose_db_version WHERE is_applied AND version_id > 0) AS applied")"
+          printf 'Applied Goose versions=%s\n' "$applied_versions"
+          test "$applied_versions" = "1,2,3,4,5"
