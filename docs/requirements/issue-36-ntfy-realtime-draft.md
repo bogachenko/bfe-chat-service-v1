@@ -42,15 +42,21 @@
 
 | Android state | Draft behavior | Limit |
 |---|---|---|
-| App foreground | ntfy wake-up refreshes the open chat through HTTP/PostgreSQL; notification rendering is a separate client UX choice | A missing event never proves that no message exists |
-| Background / screen off | BFE-owned system notification is best-effort only while the client stream/service remains active | Foreground service needs an ongoing notification and must satisfy platform/policy requirements |
-| Doze | Direct network streams can be suspended; ntfy's own app documents FGS-based instant delivery, but that behavior must be verified for BFE | No universal latency/delivery guarantee |
-| OS process death | Delivery/restart is not guaranteed | Reconcile history on next launch/resume |
+| App foreground | ntfy HTTP JSON/SSE stream is used as a wake-up signal; refresh chat via authorized HTTP history | A missing event never proves that no message exists |
+| Background after explicit user enablement | A BFE-owned native FGS may keep the stream active and post generic BFE notifications; best effort only | Start the service while the app is visible; persistent accurate notification and user stop control are required |
+| Background without an active FGS / user stops service | No live-stream or notification delivery is promised | Do not try to start the service from background without a documented Android exemption |
+| Screen off / Doze | Delivery may continue only while the service/connection survives and Android permits network access | No universal delivery or latency guarantee; validate on supported physical devices |
+| Network unavailable | Reconnect when possible, then reconcile through authoritative history | Stream absence is not proof of message absence |
+| OS process death | Service restart and delivery are not guaranteed | Reconcile after manual launch/resume |
+| Device reboot | Automatic service restart is not assumed | Reconcile after the user launches/resumes BFE |
 | User force-stop | No delivery is promised until manual relaunch | Reconcile history after the user reopens BFE |
-| Notifications denied/channel disabled | No visible system notification | Respect POST_NOTIFICATIONS (Android 13+) and user channel settings |
+| POST_NOTIFICATIONS denied / channel disabled | No ordinary visible BFE notification; Android controls how the required FGS notification is surfaced | Respect Android 13+ runtime permission and user channel settings |
+| Logout / account switch | Stop old subscription/service and clear prior-session state before new-session data | Revalidate the new session before history catch-up |
 | Chat administratively disabled | Existing subscription may receive only wakeToken; no new operations/history/subscriptions | After re-enable, use authorized history catch-up; do not add periodic Drive-session checks |
 
-**Mechanism comparison:** FCM is Android's recommended route for chat notifications during Doze, but violates the current no-FCM requirement and needs an explicit Project Owner override. UnifiedPush avoids Firebase but requires a BFE connector and a configured distributor, conflicting with the no-extra-app requirement unless that requirement changes. A foreground service preserves current constraints only conditionally; Android 14+ requires service type/permission, specialUse requires a subtype property and Google Play review, and Android 12+ restricts background starts. wakeToken is non-identifying and non-authorizing, so notification tap opens the generic Chat entry point; exact conversation routing requires a separately approved backend lookup contract.
+**Architecture candidate under the fixed constraints:** use ntfy's long-lived HTTP JSON/SSE stream for in-app realtime. For optional best-effort Android background notifications, BFE itself owns a native foreground service that is started from a visible activity only after explicit user enablement, displays a persistent accurate notification with a stop action, and turns opaque wakeToken events into generic BFE notifications. Android 12+ restricts starting FGS from the background. Android 14+ requires the service type and corresponding permission. For a continuous stream, `dataSync` is unsuitable for Android 15+ targets because its background use is limited to six hours per 24 hours; `remoteMessaging` is not assumed to apply because its documented purpose is text-message transfer/continuity between devices. `specialUse` is only a conditional candidate if no other type accurately fits; it needs `FOREGROUND_SERVICE_SPECIAL_USE`, a manifest subtype property and Google Play declaration/review. Play policy requires user benefit, user awareness/control and a justified duration; approval is not guaranteed. Android 13+ ordinary notifications require runtime `POST_NOTIFICATIONS` permission and channels may be disabled. Do not request battery-optimization exemption by default.
+
+FCM/Firebase and UnifiedPush are excluded target alternatives under the current Project Owner constraints; do not implement or substitute either. If no FGS type/policy path is accepted, background delivery remains a blocking product limitation to return to the Project Owner, not a reason to silently change the constraints. The ntfy event carries only opaque `wakeToken`; duplicate/missing/reordered signals trigger/coalesce authoritative HTTP history reconciliation using the backend cursor and stable persisted message order/identity, never ntfy event IDs/timestamps as message authority. The generic Chat entry point is the current navigation proposal because wakeToken has no routing metadata; exact-conversation navigation requires a separately approved backend lookup contract.
 
 Official evidence: [Android Doze](https://developer.android.com/training/monitoring-device-state/doze-standby), [foreground-service types](https://developer.android.com/develop/background-work/services/fgs/service-types), [notification permission](https://developer.android.com/develop/ui/compose/notifications/notification-permission), [ntfy instant delivery](https://docs.ntfy.sh/subscribe/phone/), [ntfy self-hosted FCM](https://docs.ntfy.sh/config/), [UnifiedPush Android spec](https://unifiedpush.org/developers/spec/android/), [FCM force-stop behavior](https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages).
 
@@ -61,13 +67,13 @@ Official evidence: [Android Doze](https://developer.android.com/training/monitor
 | OQ36-NTFY-02 | Backend and ntfy infrastructure owners | Endpoint/topic/ACL ownership and negative cross-topic tests; server-controlled isolation proven |
 | OQ36-NTFY-03 | Backend and ntfy infrastructure owners | Active subscriber removal/rejoin tests; approved revocation bound demonstrated |
 | OQ36-NTFY-04 | Flutter Web and backend owners | Browser matrix, CORS and credential-leak tests; supported auth flow works without URL credentials |
-| OQ36-NTFY-05 | Flutter Android owner and Project Owner | Current policy review and Doze/process-death tests; lifecycle limits documented |
+| OQ36-NTFY-05 | Flutter Android owner and Project Owner | Evidence for the exact FGS type, manifest permissions/subtype, visible/stoppable notification, Google Play declaration/review, and device matrix including Doze, process death, reboot and force-stop |
 | OQ36-NTFY-06 | Backend and Flutter owners | Versioned schema, event IDs/cursors, dedupe/gap examples; deterministic reconciliation approved |
 | OQ36-NTFY-07 | Backend owner and Project Owner | Failure analysis, retry/outbox and telemetry tests; persisted send independent of ntfy |
 | OQ36-NTFY-08 | Project Owner, Release Manager and client maintainers | Deployed dependency inventory and rollout/rollback plan; production impact evidenced |
 | OQ36-NTFY-09 | Project Owner | RESOLVED — target-direction decision recorded in [Issue #36 comment](https://github.com/bogachenko/bfe-chat-service/issues/36#issuecomment-6385730270); draft approval remains blocked by other gates |
 
-- **OQ36-NTFY-10:** Project Owner must choose whether to retain the current no-FCM/no-extra-app constraints with best-effort FGS delivery or approve a requirements change.
+- **OQ36-NTFY-10:** Project Owner must explicitly accept conditional best-effort Android notification behavior under the fixed no-FCM/no-UnifiedPush/no-extra-app constraints, or record a separate requirements change. If no eligible FGS/policy path exists, do not substitute another transport; keep background notification delivery blocked.
 - **OQ36-NTFY-11:** Exact-conversation navigation is unresolved because wakeToken contains no identifying metadata; generic Chat entry is the current draft behavior.
 
 ## Production boundaries
