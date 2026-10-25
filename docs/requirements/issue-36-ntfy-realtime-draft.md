@@ -209,12 +209,13 @@ The existing subscription may continue receiving only the opaque `wakeToken` whi
 ## Latest validation evidence (2026-10-25)
 
 - Repository/branch: `bogachenko/bfe-chat-service` / `docs/issue-36-ntfy-realtime-requirements-draft`.
-- PR: [#37](https://github.com/bogachenko/bfe-chat-service/pull/37), remains draft.
-- Validated HEAD: `d4605adb534c95f483e19896d9eb5bc8b7234baf`. The current branch head may advance for report-only changes; the validated XML/C1 blobs remain unchanged.
-- `RequirementsAnalysis.xml` blob: `39941295d71e35fa5c8efccf45db79a24deda3df`.
-- C1 `workspace.dsl` blob: `a4e303085b83c61c10409ce63cc83518cdb62efb`.
-- Workflow: [run 40193780983](https://github.com/bogachenko/bfe-chat-service/actions/runs/40193780983) — **success**.
-- XML parser: **PASS**; root `REQUIREMENTS_ANALYSIS`; 111 IDs, 111 unique, 0 duplicates; 322 local references resolved; one historical approval reference retained as external provenance.
-- Structurizr C1 parser: **PASS**, exit code 0, pinned image digest `sha256:721136283c2f9cf1ba69037bc9de136c579d66fdcb2d771cb60546ec68def1a5`.
-- Independent QA: **NOT RUN**. Human Approval: **NOT GRANTED**. Technology, implementation and deployment remain **BLOCKED**.
-- This report-only update does not change the validated XML or C1 blobs. It does not approve the requirements or establish Google Play eligibility.
+- PR: [#37](https://github.com/bogachenko/bfe-chat-service/pull/37), remains open and draft.
+- **Validation commit/HEAD:** `ba8f4cb0aa191bd323bd7f58267ca2e8c431670a`.
+- `RequirementsAnalysis.xml` blob: `9b7dec7a337878267a2d7d567f05c7a05725725a`.
+- C1 `docs/architecture/c4/workspace.dsl` blob: `a1c87d50ddd2ad139be7d9e395fc044c2327f682` (unchanged).
+- GitHub Actions: [run 40208796934](https://github.com/bogachenko/bfe-chat-service/actions/runs/40208796934) — **success** on the exact validation commit and XML/C1 blobs above.
+- XML parser: **PASS**, exit code 0; root `REQUIREMENTS_ANALYSIS`; 117 IDs, 117 unique, 0 duplicates; 360 local references resolved; one historical external provenance reference retained.
+- Structurizr C1 parser: **PASS**, exit code 0; pinned image digest `sha256:721136283c2f9cf1ba69037bc9de136c579d66fdcb2d771cb60546ec68def1a5`.
+- Independent QA: **NOT RUN**. Human Approval: **NOT GRANTED**.
+- Technology, implementation, migration and deployment: **BLOCKED**. `OQ36-NTFY-12` remains blocking pending Project Owner approval of the proposed 30-day TTL/reuse policy, Internal Auth logout-revocation confirmation, and approved downstream uniqueness/expiry enforcement.
+- This section is a report-only update after validation. It does not change the validated XML/C1 blobs; the PR head may advance for this Markdown-only commit. Historical validation records above remain preserved and are not presented as current evidence.
