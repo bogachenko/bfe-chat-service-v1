@@ -38,7 +38,7 @@
 
 ## Android system notification lifecycle — requirements draft
 
-**Status: PROPOSED_NOT_APPROVED. Current XML/C1 parser gates: PENDING for this revision.** The ntfy Android app's own notification is not a BFE notification. BFE Android Client must post its own generic system notification from the opaque `wakeToken` while its eligible stream/service is active. The current Flutter source constraints still prohibit FCM and a required separate app, so a foreground-service-based ntfy subscription is the only current-constraint-preserving candidate; it is not cleared for Google Play or production.
+**Status: PROPOSED_NOT_APPROVED. XML and Structurizr C1 parser gates: PASS on the validated artifact blobs below; Independent QA and Human Approval remain pending.** The ntfy Android app's own notification is not a BFE notification. BFE Android Client must post its own generic system notification from the opaque `wakeToken` while its eligible stream/service is active. The current Flutter source constraints still prohibit FCM and a required separate app, so a foreground-service-based ntfy subscription is the only current-constraint-preserving candidate; it is not cleared for Google Play or production.
 
 | Android state | Draft behavior | Limit |
 |---|---|---|
@@ -80,18 +80,18 @@ Official evidence: [Android Doze](https://developer.android.com/training/monitor
 
 ## Verification status
 
-**Parser gates: PASS on the exact artifact blobs listed below.** Validation was run by the permanent GitHub Actions workflow `.github/workflows/requirements-c1-validation.yml` using the Python standard-library XML parser and Structurizr `2026.09.19`.
+**Parser gates: PASS on the exact current artifact blobs.** Validation used the permanent GitHub Actions workflow `.github/workflows/requirements-c1-validation.yml`, the Python standard-library XML parser and Structurizr `2026.09.19`.
 
-- Validation commit: `a57063532ef598db928f94dcb8cbe796bdef3c37`.
-- `RequirementsAnalysis.xml` blob: `8bdd4b9b7b03e727e40e6913c609ddb5f499c444`.
-- C1 `workspace.dsl` blob: `9da6ed068b5856c7af30ff1c3496f4142a5c1c24`.
-- XML parser: **PASS**, exit code 0; root `REQUIREMENTS_ANALYSIS`; 90 IDs, 90 unique, 0 duplicates; 263 local references resolved. The single `APPROVAL25-REQUIREMENTS` reference is preserved as external historical provenance and is not treated as a local ID.
+- Validation commit: `81a546d04ca5ee8f6ce25cc98c63f85794cc4862`.
+- `RequirementsAnalysis.xml` blob: `cd15d699a1782627c603290f7a15d494d763a0ff`.
+- C1 `workspace.dsl` blob: `a4e303085b83c61c10409ce63cc83518cdb62efb`.
+- XML parser: **PASS**, exit code 0; root `REQUIREMENTS_ANALYSIS`; 107 IDs, 107 unique; 318 local references resolved; one historical external provenance reference (`APPROVAL25-REQUIREMENTS`).
 - Structurizr parser: **PASS**, exit code 0; image `structurizr/structurizr:2026.09.19`, digest `sha256:721136283c2f9cf1ba69037bc9de136c579d66fdcb2d771cb60546ec68def1a5`.
-- Workflow run and logs: https://github.com/bogachenko/bfe-chat-service/actions/runs/40107956573
-- The workflow is permanent in this draft branch and runs on relevant pushes, pull requests and manual dispatch. The checkout action is pinned to a full commit SHA; the Structurizr image is pinned by version and digest.
-- `GATE_STATUS`: XML parser `PASS`; Structurizr parser `PASS`; Independent QA `NOT_RUN`; Human Approval `NOT_GRANTED`; Technology, implementation and deployment remain `BLOCKED`.
-- This report-only update does not change the validated XML or DSL blobs. The branch HEAD will advance because this report is being updated.
-- No production code, configuration, database, migrations, permissions or infrastructure were changed. `bfe-drive` remains READ-ONLY; `bfe-drive-client` production branches remain untouched.
+- Workflow run and logs: [40191845919](https://github.com/bogachenko/bfe-chat-service/actions/runs/40191845919).
+- The report-only commit does not change these validated XML/DSL blobs.
+- Independent QA: `NOT RUN`; Human Approval: `NOT GRANTED`; Technology, implementation and deployment remain **BLOCKED**.
+- No production code/configuration, database, migrations, permissions or infrastructure were changed; no tests were added or modified. `bfe-drive` remains READ-ONLY; `bfe-drive-client` production branches remain untouched.
+
 ## Cross-component semantic consistency review (2026-10-24)
 
 **Result: PARTIAL ALIGNMENT — REQUIREMENTS APPROVAL BLOCKED.** This is an orchestrator content review, not the formal Independent QA gate. No RequirementsAnalysis XML, C1 DSL, production artifact or implementation was changed by this review.
@@ -126,15 +126,15 @@ The draft's supersession note now explicitly distinguishes the historical wordin
 
 ### Gate status
 
-- Backend XML parser: `PASS` on final blob `488bf468d0992b21a8f14ae04e1eb940b91dc019`, verified by [GitHub Actions run 40109073739](https://github.com/bogachenko/bfe-chat-service/actions/runs/40109073739) on HEAD `134ae1f0efcb8d6796fe3b6d18822f23f1d044af`.
-- Backend Structurizr parser: `PASS` on blob `9da6ed068b5856c7af30ff1c3496f4142a5c1c24` (current C1 was parsed; this is not a carry-forward from the baseline).
-- Flutter XML parser: `PASS` on blob `53b90371b2ab29446d6d1ee79bc77348f0df540f`.
-- Flutter Structurizr parser: `PASS` on blob `a13dbab215b7d4427820aeb3151e138deec59f40`.
+- Backend XML parser: `PASS` on blob `cd15d699a1782627c603290f7a15d494d763a0ff`, validated on HEAD `81a546d04ca5ee8f6ce25cc98c63f85794cc4862` by [GitHub Actions run 40191845919](https://github.com/bogachenko/bfe-chat-service/actions/runs/40191845919): 107 IDs, 107 unique, 318 local references, one historical external provenance reference.
+- Backend Structurizr parser: `PASS` on C1 blob `a4e303085b83c61c10409ce63cc83518cdb62efb`, same run.
+- Flutter XML parser: `PASS` on blob `64f5dde91020fda36cddb68cb930450e850e1527`, validated on HEAD `06bf808289ca8386f4e5fa60403cc53a7a24757d` by [GitHub Actions run 40191852479](https://github.com/bogachenko/bfe-chat-flutter/actions/runs/40191852479): 305 IDs, 305 unique, 1,288 local references, zero historical external references.
+- Flutter Structurizr parser: `PASS` on C1 blob `26c3de3f5f624f21fc0b5b04599b73d6882ea552`, same run.
 - Independent QA: `NOT RUN`.
 - Human Approval: `NOT GRANTED`.
 - Technology, implementation and deployment: **BLOCKED**.
 
-No approved baseline, production repository, deployment, configuration, database, migration or infrastructure was changed.
+The report-only follow-up does not change the validated XML or C1 blobs. No production code, configuration, database, migrations, permissions or infrastructure were changed; no tests were added or modified.
 
 ## Administrative Chat disablement — cross-component decision (2026-10-24)
 
