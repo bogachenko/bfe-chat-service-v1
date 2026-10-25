@@ -1,26 +1,350 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<DEVELOPMENT_PLAN id="DP-BFE-CHAT-001" status="HUMAN_APPROVED" requirements_source="RequirementsAnalysis.xml" technology_source="Technology.xml" effective_revision="ISSUE32" previous_approvals="HISTORICAL_ONLY">
+<DEVELOPMENT_PLAN id="DP-BFE-CHAT-001" status="PROPOSED" approval="AWAITING_HUMAN_APPROVAL" requirements_source="RequirementsAnalysis.xml" requirements_revision="ISSUE32-CLEAN-TARGET" requirements_approved_commit="6ae317282280b0286cbe92e51b29cab01ede9345" technology_source="Technology.xml" technology_revision="ISSUE32-CLEAN-TARGET" technology_approved_commit="3449e8c1cfa254c7b3a315c50aaba084f7233253" effective_revision="ISSUE32-CLEAN-TARGET-PROPOSAL" previous_approvals="HISTORICAL_ONLY">
 
-  <ISSUE32_APPROVAL_PROVENANCE source="project_owner_issue_comments" release_status="NOT_APPROVED">
-    <HUMAN_APPROVAL artifact="DevelopmentPlan.xml" comment_url="https://github.com/bogachenko/bfe-chat-service/issues/32#issuecomment-6322940899" reviewed_commit="cf883e5b9c0109bcc950b74ba23f9e19749455ec" />
-  </ISSUE32_APPROVAL_PROVENANCE>
-  <EFFECTIVE_SPECIFICATION id="DP32-EFFECTIVE" status="HUMAN_APPROVED" approval="HUMAN_APPROVED" target="UNVERSIONED_CONVERSATIONS_DPOP_ONLY">Only ISSUE32 is normative. Past approvals remain in Git history.</EFFECTIVE_SPECIFICATION>
-<APPROVAL_PROVENANCE status="HISTORICAL_ONLY"><HISTORICAL_APPROVAL ref="APPROVAL25-DEVELOPMENT" commit="c6b2761e86c4f79c6cf19ade13a3b169695c2df9" />
-<HISTORICAL_APPROVAL ref="APPROVAL25-ARCH-REVISION" commit="117bda7c2175c59ebaade269ffd0e3d19b2ed42e" /></APPROVAL_PROVENANCE>
+  <HISTORICAL_APPROVAL_PROVENANCE id="DP48-HIST-APPROVAL-01" status="HISTORICAL_ONLY" source="project_owner_issue_comments" artifact="DevelopmentPlan.xml" comment_url="https://github.com/bogachenko/bfe-chat-service/issues/32#issuecomment-6322940899" reviewed_commit="cf883e5b9c0109bcc950b74ba23f9e19749455ec" scope="ISSUE32" />
+  <HISTORICAL_APPROVAL_PROVENANCE id="DP48-HIST-APPROVAL-02" status="HISTORICAL_ONLY" source="git_history" artifact="DevelopmentPlan.xml" historical_ref="APPROVAL25-DEVELOPMENT" reviewed_commit="c6b2761e86c4f79c6cf19ade13a3b169695c2df9" scope="ISSUE25" />
+  <HISTORICAL_APPROVAL_PROVENANCE id="DP48-HIST-APPROVAL-03" status="HISTORICAL_ONLY" source="git_history" artifact="DevelopmentPlan.xml" historical_ref="APPROVAL25-ARCH-REVISION" reviewed_commit="117bda7c2175c59ebaade269ffd0e3d19b2ed42e" scope="ISSUE25_ARCH_REVISION" />
+  <HISTORICAL_REVISION id="DP32-001" status="HISTORICAL_ONLY" approval="HISTORICAL_ONLY" revision="ISSUE32" baseline="3ed6798ab6f64c50fc3c3dca1029ac94b44a7368" requirements_ref="RA32-001" technology_ref="TECH32-001">
+    <NOTE>The former ISSUE32 plan was approved for its reviewed revision only. Its references to existing /v2 handlers, cutover-time route removal, and the prior transition approach are retained solely as provenance and are not normative for this clean-target proposal.</NOTE>
+  </HISTORICAL_REVISION>
+  <EFFECTIVE_SPECIFICATION id="DP48-EFFECTIVE" status="PROPOSED" approval="AWAITING_HUMAN_APPROVAL" target="ISSUE32-CLEAN-TARGET_UNVERSIONED_CONVERSATIONS_DPOP_ONLY">
+    This proposed DevelopmentPlan revision is derived from the exact Human-approved RequirementsAnalysis.xml revision ISSUE32-CLEAN-TARGET and Technology.xml revision ISSUE32-CLEAN-TARGET. It proposes one unversioned /conversations HTTP resource tree, a separate /ws WebSocket endpoint, session-bound DPoP through existing Internal Auth UDS, current per-subscription membership authorization, immediate revocation enforcement, and a clean PostgreSQL 18.4 target-only schema. It does not authorize implementation, database changes, migration execution, merge, deployment, or changes to other repositories.
+  </EFFECTIVE_SPECIFICATION>
 
+  <ISSUE48_DEVELOPMENT_REVISION id="DP48-001" status="PROPOSED" approval="AWAITING_HUMAN_APPROVAL" requirements_ref="RA32-001" technology_ref="TECH32-001" scope="ISSUE32-CLEAN-TARGET">
+    <SCOPE>Define the target architecture, module boundaries, data responsibilities, request/event flows, consistency rules, dependencies, development order, invariants, and mental verification scenarios for the approved clean target. The proposal is architecture only. No source code, tests, SQL migrations, database schema files, runtime configuration, deployment, or other GRACE artifact is changed by this stage.</SCOPE>
+    <SOURCE_OF_TRUTH>
+      <SOURCE ref="RA32-001">Human-approved clean-target requirements are normative for behavior and acceptance.</SOURCE>
+      <SOURCE ref="TECH32-001">Human-approved clean-target technology decisions are normative for technology choices and constraints.</SOURCE>
+      <RULE>Existing code, historical DevelopmentPlan statements, historical approvals, and old migration files are not target-architecture authority when they conflict with the approved clean-target artifacts.</RULE>
+    </SOURCE_OF_TRUTH>
 
-  
-  <ISSUE32_DEVELOPMENT_REVISION id="DP32-001" status="HUMAN_APPROVED" approval="HUMAN_APPROVED" baseline="3ed6798ab6f64c50fc3c3dca1029ac94b44a7368" requirements_ref="RA32-001" technology_ref="TECH32-001">
-    <SCOPE>Target delta to the Issue #25 direct/group architecture; historical legacy architecture and approval records are preserved as prior-scope evidence, not as target endpoints.</SCOPE>
-    <MODULE id="DP32-M-TRANSPORT" refs="REQ32-API TD32-HTTP"><RESPONSIBILITY>One unversioned /conversations route tree to the existing conversation domain handlers; remove old route registrations only at approved cutover.</RESPONSIBILITY><NON_RESPONSIBILITY>No duplicate /v1 or /v2 handlers and no rewriting of working conversation logic.</NON_RESPONSIBILITY></MODULE>
-    <MODULE id="DP32-M-AUTH" refs="REQ32-AUTH TD32-SECURITY"><RESPONSIBILITY>Existing BFE Drive Internal Auth UDS plus DPoP-only caller validation, independent conversation membership/role checks and WebSocket revocation.</RESPONSIBILITY><INVARIANT ref="INV32-DPOP" /></MODULE>
-    <MODULE id="DP32-M-DOMAIN" refs="REQ32-MODEL TD32-REUSE"><RESPONSIBILITY>Reuse the currently working /v2 direct and group lifecycle, authorization, message/history, documents and realtime logic through one conversation identity.</RESPONSIBILITY></MODULE>
-    <MODULE id="DP32-M-TRANSITION" refs="REQ32-PRESERVE TD32-MIGRATION"><RESPONSIBILITY>Inspect repository schema definitions and call sites to identify obsolete legacy components. Do not inspect production data, implement migration or support old clients; preserve the direct/group model. Database destruction is outside Developer authority.</RESPONSIBILITY><NON_RESPONSIBILITY>Cannot authorize DB migration, deployment, merges or client cutover.</NON_RESPONSIBILITY></MODULE>
-    <MODULE id="DP32-M-DIRECT-GROUP" refs="REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP TD32-DOMAIN"><RESPONSIBILITY>Direct/group creation, ownership and roles, membership epochs, private hide and concurrent direct uniqueness.</RESPONSIBILITY></MODULE>
-    <MODULE id="DP32-M-MESSAGING" refs="REQ32-HISTORY REQ32-MESSAGE REQ32-DOCUMENT REQ32-READ TD32-DOMAIN"><RESPONSIBILITY>Ordered idempotent messages, history filtered by membership periods, document metadata without Drive grants, monotonic read markers.</RESPONSIBILITY></MODULE>
-    <MODULE id="DP32-M-REALTIME" refs="REQ32-REALTIME REQ32-MEMBERSHIP TD32-SECURITY"><RESPONSIBILITY>Centrifuge authorized fan-out, membership/delivery ordering, revocation, reconnect and multi-device.</RESPONSIBILITY></MODULE>
-    <FLOW id="DP32-F01">HTTP /conversations -&gt; DPoP/UDS validation -&gt; membership authorization -&gt; shared direct/group domain -&gt; PostgreSQL storage -&gt; authorized Centrifuge delivery.</FLOW>
-    <FLOW id="DP32-F02">Repository route/schema inventory -&gt; approved target contracts -&gt; authorized obsolete-code/schema cleanup -&gt; existing quality gates -&gt; Release Manager deployment decision.</FLOW>
-    <GATE id="DP32-G01">Requirements and Technology approval first; DevelopmentPlan approval then module and class/function contracts; mental scenarios and check criteria precede any production code cleanup. No migration or legacy-client support. Release Manager owns integration/deployment decisions.</GATE>
-  </ISSUE32_DEVELOPMENT_REVISION>
+    <ARCHITECTURE_PRINCIPLES>
+      <PRINCIPLE id="DP48-P01" refs="REQ32-API TD32-HTTP INV32-ONE-API">The only conversation HTTP resource tree is /conversations and its unversioned descendants. /ws is a separate WebSocket endpoint. No /v1 or /v2 HTTP routes, route aliases, compatibility facades, or legacy-client paths exist in the target.</PRINCIPLE>
+      <PRINCIPLE id="DP48-P02" refs="REQ32-AUTH REQ32-WS TD32-SECURITY INV32-DPOP INV32-WS">Authentication proves a BFE Drive session using existing Internal Auth UDS and session-bound DPoP; conversation membership and role authorization remain independent application decisions.</PRINCIPLE>
+      <PRINCIPLE id="DP48-P03" refs="REQ32-MODEL REQ32-PRESERVE TD32-REUSE">Direct and group conversations use one conversation identity, one message-ordering model, one history model, one membership-visibility model, and one real-time delivery policy.</PRINCIPLE>
+      <PRINCIPLE id="DP48-P04" refs="REQ32-MEMBERSHIP REQ32-HISTORY REQ32-REALTIME INV32-PRESERVE">Membership changes, message ordering, history visibility, subscription authorization, and revocation must share a defined per-conversation ordering boundary. A connection or prior authorization result is not a permanent grant.</PRINCIPLE>
+      <PRINCIPLE id="DP48-P05" refs="REQ32-PRESERVE INV32-NO-LEGACY TD32-MIGRATION TECH32-POSTGRESQL BP32-CUTOVER">The target is bootstrapped from a clean target-only Goose migration chain on PostgreSQL 18.4. No legacy-data migration, obsolete schema/table/function/package, compatibility layer, or running-environment change is part of the target.</PRINCIPLE>
+      <PRINCIPLE id="DP48-P06" refs="REQ32-DOCUMENT REQ32-ISOLATION INV32-PRESERVE">Chat stores only optional document ID and title metadata. It neither copies document content nor grants or proxies BFE Drive document rights.</PRINCIPLE>
+    </ARCHITECTURE_PRINCIPLES>
+
+    <MODULES>
+      <MODULE id="DP48-M-HTTP" refs="REQ32-API REQ32-AUTH REQ32-LIMITS TD32-HTTP TD32-SECURITY">
+        <RESPONSIBILITY>Expose the sole unversioned /conversations HTTP resource tree through Go net/http; apply request-size and shape limits; pass authenticated principal context to application use cases; map domain outcomes to stable HTTP responses.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not validate DPoP cryptography itself, decide membership/roles, implement persistence, publish Centrifuge events, expose /v1 or /v2, or preserve old route aliases.</NON_RESPONSIBILITY>
+        <INTERFACE>Protected HTTP request -> DP48-M-AUTH -> DP48-M-APPLICATION; response returns through the same transport after the application outcome is known.</INTERFACE>
+      </MODULE>
+      <MODULE id="DP48-M-AUTH" refs="REQ32-AUTH REQ32-ISOLATION TD32-SECURITY TECH32-INTERNAL-AUTH INV32-DPOP">
+        <RESPONSIBILITY>Call the existing BFE Drive Internal Auth UDS contract; validate session-bound DPoP proof and request binding for every protected HTTP request and each /ws connection; produce the trusted authenticated account UUID and authentication context.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not treat an account UUID alone as authorization, does not use Bearer fallback, does not decide conversation membership or group roles, and does not change the external Internal Auth contract.</NON_RESPONSIBILITY>
+        <FAILURE_RULE>Missing, invalid, replayed, or misbound proof and Internal Auth failure fail closed before protected state changes or data disclosure.</FAILURE_RULE>
+      </MODULE>
+      <MODULE id="DP48-M-WS" refs="REQ32-WS REQ32-AUTH REQ32-MEMBERSHIP REQ32-REALTIME TD32-SECURITY INV32-WS">
+        <RESPONSIBILITY>Keep /ws as the distinct WebSocket endpoint; authenticate connection establishment; independently authorize each requested conversation subscription using current membership interval and visibility state; associate each accepted subscription with the current membership interval/authorization generation; handle subscription invalidation and reconnect handoff.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>An authenticated connection alone grants no conversation access. The module does not trust a previous subscription decision after membership change and does not implement conversation business rules or persist messages.</NON_RESPONSIBILITY>
+      </MODULE>
+      <MODULE id="DP48-M-APPLICATION" refs="REQ32-MODEL REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MESSAGE REQ32-HISTORY REQ32-READ REQ32-DOCUMENT TD32-DOMAIN">
+        <RESPONSIBILITY>Coordinate use cases, domain validation, transaction boundaries, authorization checks, and typed success/failure outcomes across the domain modules. Ensure all use cases receive the principal produced by DP48-M-AUTH and use the same conversation authorization policy.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not own HTTP routing, DPoP verification, raw SQL, Centrifuge transport details, or BFE Drive document authorization.</NON_RESPONSIBILITY>
+      </MODULE>
+      <MODULE id="DP48-M-DIRECT" refs="REQ32-DIRECT REQ32-MODEL AC32-DIRECT TD32-DOMAIN">
+        <RESPONSIBILITY>Create and resolve direct conversations for two distinct authenticated account UUIDs; maintain one stable conversation identity per unordered account pair; apply caller-scoped personal hide without deleting or changing peer-visible conversation state or messages.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not authenticate the caller, implement group roles, erase messages, change peer visibility, or use legacy owner-scoped direct-chat structures.</NON_RESPONSIBILITY>
+        <CONSISTENCY>Concurrent create attempts for the same normalized unordered pair converge on one direct conversation through a database-enforced uniqueness invariant and transaction-safe conflict handling. Self-direct requests are rejected without side effects.</CONSISTENCY>
+      </MODULE>
+      <MODULE id="DP48-M-GROUP" refs="REQ32-GROUP REQ32-ROLES REQ32-MODEL AC32-GROUP AC32-ROLES TD32-DOMAIN">
+        <RESPONSIBILITY>Create and manage named group conversations, membership changes, rename, departure, role assignment/removal, and ownership transfer. Enforce maximum 100 members including owner; exactly one owner remains after every successful mutation; owner transfers ownership before leaving and cannot leave if no other current member exists.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not infer Chat privileges from BFE Drive ADMIN, authenticate sessions, implement direct-pair uniqueness, or bypass membership visibility rules.</NON_RESPONSIBILITY>
+        <AUTHORIZATION_MATRIX refs="REQ32-ROLES">
+          <RULE>Owner may manage the group and appoint or dismiss admins while preserving exactly one owner.</RULE>
+          <RULE>Admin may perform only the expressly allowed member-management and rename operations; admin cannot remove the owner or another admin, appoint admins, or transfer ownership.</RULE>
+          <RULE>Member cannot perform group administration. A BFE Drive ADMIN role alone grants no Chat membership or group-management right.</RULE>
+        </AUTHORIZATION_MATRIX>
+      </MODULE>
+      <MODULE id="DP48-M-MEMBERSHIP" refs="REQ32-MEMBERSHIP REQ32-ROLES REQ32-HISTORY REQ32-WS REQ32-REALTIME INV32-WS INV32-PRESERVE">
+        <RESPONSIBILITY>Own the authoritative membership intervals, active membership lookup, group role checks, per-conversation authorization ordering, visibility boundaries, authorization-generation changes, and revocation decisions consumed by HTTP, history, WebSocket, and delivery paths.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not authenticate a BFE Drive session, own message content, or grant document access.</NON_RESPONSIBILITY>
+        <VISIBILITY_RULE>Each membership interval has an inclusive visible_from_message_seq and exclusive visible_until_message_seq. History visibility is evaluated against each message sequence and the caller's own interval; messages in a gap between intervals remain invisible after rejoin. An active interval has no visible_until boundary.</VISIBILITY_RULE>
+        <ORDERING_RULE>Membership mutation and message-sequence allocation serialize on the same conversation row inside PostgreSQL transactions. On join, visible_from_message_seq is set to the next message sequence to be allocated; on removal, visible_until_message_seq is set to the next sequence to be allocated. A send allocates and inserts its sequence under the same lock, so join/send and removal/send races have one database-defined order. Visibility remains visible_from_message_seq inclusive and visible_until_message_seq exclusive.</ORDERING_RULE>
+        <REVOCATION_RULE>After removal/revocation commits, protected HTTP operations and new subscriptions fail immediately. The old membership interval/generation is invalidated, existing Centrifuge subscriptions for that interval are revoked, and delivery routing must not target that old interval. Delivery rechecks current authorization rather than relying on a cached connection or historical subscription decision.</REVOCATION_RULE>
+      </MODULE>
+      <MODULE id="DP48-M-MESSAGES" refs="REQ32-MESSAGE REQ32-MEMBERSHIP REQ32-LIMITS AC32-MESSAGE AC32-LIMITS TD32-DOMAIN">
+        <RESPONSIBILITY>Accept messages only from current members; derive sender identity from authenticated context; validate text and request limits; allocate one stable monotonic message sequence per conversation; enforce idempotent retries and persist the canonical message result.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not trust client-supplied sender identity, publish before persistence, determine history pagination, or grant document access.</NON_RESPONSIBILITY>
+        <IDEMPOTENCY_RULE>For a repeated key and identical request content, return the original persisted result. For the same key with different content, return HTTP 409 Conflict. Concurrent retries must not create duplicate messages. The uniqueness scope and exact content-equivalence definition are unresolved in the approved upper artifacts and are recorded as open questions below; they must be settled before the message contract is authored.</IDEMPOTENCY_RULE>
+        <ORDERING_RULE>Message sequence allocation and insertion occur in one transaction under the conversation ordering boundary. A failed validation or authorization check has no persistence or publication side effect.</ORDERING_RULE>
+      </MODULE>
+      <MODULE id="DP48-M-HISTORY" refs="REQ32-HISTORY REQ32-MEMBERSHIP REQ32-REALTIME AC32-HISTORY TD32-DOMAIN">
+        <RESPONSIBILITY>Serve cursor-paginated persisted messages with default page size 50 and maximum 100; apply membership-interval visibility to every page and to reconnect/catch-up queries; preserve the conversation's stable monotonic message order.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not bypass current authorization, reveal messages from membership gaps, or use a separate direct/group history model.</NON_RESPONSIBILITY>
+      </MODULE>
+      <MODULE id="DP48-M-READ" refs="REQ32-READ REQ32-HISTORY REQ32-MEMBERSHIP AC32-READ TD32-DOMAIN">
+        <RESPONSIBILITY>Maintain one monotonic read marker per account and conversation, shared across devices; calculate unread counts only from visible messages sent by other accounts; enforce that a caller can advance only their own marker.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not mutate another member's marker or count messages outside the caller's visibility intervals.</NON_RESPONSIBILITY>
+      </MODULE>
+      <MODULE id="DP48-M-DOCUMENT" refs="REQ32-DOCUMENT REQ32-ISOLATION AC32-DOCUMENT INV32-PRESERVE">
+        <RESPONSIBILITY>Validate and persist optional document ID and title as message context, returning both in authorized history and message events without copying document content.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not fetch document contents, create Drive grants, infer document access from conversation membership, or replace BFE Drive's independent document authorization.</NON_RESPONSIBILITY>
+      </MODULE>
+      <MODULE id="DP48-M-STORAGE" refs="REQ32-PRESERVE REQ32-MEMBERSHIP REQ32-MESSAGE REQ32-HISTORY REQ32-READ REQ32-DOCUMENT TD32-DOMAIN TD32-MIGRATION TECH32-POSTGRESQL TECH32-PG18-COMPAT TECH32-PGX">
+        <RESPONSIBILITY>Own PostgreSQL persistence through the existing pgx dependency and explicit transactions. Persist conversations, normalized direct-pair identity, group membership intervals and roles, ordered messages/idempotency records, read markers, and any transactional event-outbox records needed by the delivery design. Enforce uniqueness, foreign-key, check, and ordering constraints that protect the approved invariants.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not retain obsolete owner-scoped legacy tables, legacy SQL functions, legacy-only packages, old schema variants, or compatibility views. It does not run migrations or modify a database in this stage.</NON_RESPONSIBILITY>
+        <TARGET_SCHEMA>All Chat-specific conversation state and ACLs reside within the bfe_chat schema. Only the active Issue #32 conversation model belongs in the final target schema. PostgreSQL major 18, baseline 18.4, is the approved bootstrap baseline. The existing five-migration compatibility run is evidence for that historical set only; it does not require all five files or their legacy definitions in the final clean target-only Goose chain.</TARGET_SCHEMA>
+      </MODULE>
+      <MODULE id="DP48-M-REALTIME" refs="REQ32-REALTIME REQ32-WS REQ32-MEMBERSHIP REQ32-MESSAGE TD32-SECURITY TD32-DOMAIN TECH32-CENTRIFUGE INV32-WS">
+        <RESPONSIBILITY>Use embedded Centrifuge for authenticated, authorized real-time delivery. Publish only persisted message events; route only to currently eligible membership intervals; process authorization-generation changes and revoke old subscriptions; use persisted history for reconnect recovery.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Centrifuge channel subscription alone is not a membership authority. The module does not publish uncommitted messages, treat a connection as permanent authorization, or deliver a document grant/content payload.</NON_RESPONSIBILITY>
+        <DELIVERY_DESIGN>Persist a delivery/outbox record in the same transaction as the message. Dispatch committed records in per-conversation order, re-evaluate current membership intervals before fan-out, and target membership-interval-specific subscription channels rather than a broad channel that could continue delivering to a removed member. On removal, invalidate the old interval/generation and revoke its established subscriptions. A delivery decision made before a revocation must be ordered before the revocation barrier; no delivery decision after the barrier may target the revoked interval.</DELIVERY_DESIGN>
+        <RECOVERY>Real-time publication is not the source of truth. The committed message history and cursor are authoritative; reconnect and catch-up read persisted history through DP48-M-HISTORY with the same visibility filtering.</RECOVERY>
+      </MODULE>
+      <MODULE id="DP48-M-BOOTSTRAP" refs="REQ32-PRESERVE INV32-NO-LEGACY TD32-MIGRATION TECH32-POSTGRESQL TECH32-PG18-COMPAT TECH32-GOOSE BP32-CUTOVER">
+        <RESPONSIBILITY>Specify a clean target-only Goose migration chain for fresh PostgreSQL 18.4 bootstrap, including only active target entities and constraints required by this proposal.</RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not migrate legacy data, inspect production data, run SQL migrations, modify an existing database, deploy, or preserve obsolete migrations solely for compatibility with historical schemas.</NON_RESPONSIBILITY>
+      </MODULE>
+    </MODULES>
+
+    <LOGICAL_DATA_MODEL>
+      <DATA_OBJECT id="DP48-D-CONVERSATION" refs="REQ32-MODEL REQ32-DIRECT REQ32-GROUP INV32-PRESERVE">One stable conversation identity with type DIRECT or GROUP. Direct and group operations share message order, authorization, history, membership interval, read-marker, and realtime semantics; type-specific rules are applied by the relevant domain module.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-DIRECT-PAIR" refs="REQ32-DIRECT AC32-DIRECT">A normalized unordered pair of distinct account UUIDs uniquely identifies one direct conversation. The database constraint, not a check-then-insert alone, is the final concurrency guard.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-MEMBERSHIP-INTERVAL" refs="REQ32-MEMBERSHIP REQ32-ROLES REQ32-HISTORY REQ32-WS">A bounded membership interval records account, conversation, role, visible_from_message_seq inclusive, visible_until_message_seq exclusive or open, and a generation/identity for subscription revocation. Rejoin creates a new interval; it never widens an earlier interval over a gap.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-MESSAGE" refs="REQ32-MESSAGE REQ32-HISTORY REQ32-DOCUMENT REQ32-LIMITS">A persisted message records conversation identity, monotonic conversation-scoped sequence, trusted sender account UUID, validated text, optional document ID/title, and idempotency result identity. A message event is eligible for publication only after its transaction commits.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-IDEMPOTENCY" refs="REQ32-MESSAGE AC32-MESSAGE">A uniqueness-enforced idempotency record binds the request key to the canonical request/result so concurrent retries cannot create duplicates. The exact key scope and content-equivalence rule remain open until clarified by the Project Owner or an approved upper artifact.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-READ-MARKER" refs="REQ32-READ REQ32-HISTORY">A monotonic last-read message sequence per account and conversation; updates are account-scoped and immediately shared by all devices through the same persistent record.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-OUTBOX" refs="REQ32-REALTIME REQ32-MEMBERSHIP TD32-DOMAIN">A transactional delivery record for committed message and authorization-generation events. It supports ordered dispatch and revalidation; it is internal PostgreSQL state, not a new external service or dependency.</DATA_OBJECT>
+      <DATA_OBJECT id="DP48-D-DOCUMENT-CONTEXT" refs="REQ32-DOCUMENT REQ32-ISOLATION">Optional document ID/title metadata only. No document bytes, copied content, bearer credential, or Drive authorization grant is stored in Chat.</DATA_OBJECT>
+    </LOGICAL_DATA_MODEL>
+
+    <FLOWS>
+      <FLOW id="DP48-F01" refs="REQ32-API REQ32-AUTH REQ32-ISOLATION TD32-HTTP TD32-SECURITY INV32-DPOP">
+        <NAME>Protected HTTP request</NAME>
+        <STEP order="1" ref="DP48-M-HTTP" />
+        <STEP order="2" ref="DP48-M-AUTH" />
+        <STEP order="3" ref="DP48-M-APPLICATION" />
+        <STEP order="4" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="5" ref="DP48-M-STORAGE" />
+        <RESULT>Only unversioned /conversations routes are registered. The principal comes from successful Internal Auth plus DPoP validation. Membership/role authorization and transaction checks precede protected reads or writes; failures return without side effects or data leakage.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F02" refs="REQ32-WS REQ32-AUTH REQ32-MEMBERSHIP REQ32-REALTIME TD32-SECURITY INV32-WS">
+        <NAME>WebSocket connection and subscription</NAME>
+        <STEP order="1" ref="DP48-M-WS" />
+        <STEP order="2" ref="DP48-M-AUTH" />
+        <STEP order="3" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="4" ref="DP48-M-REALTIME" />
+        <RESULT>Connection establishment requires valid session-bound DPoP. Every conversation subscription independently checks current membership and visibility. The accepted subscription is bound to the current interval/generation and is revoked when that interval is removed or invalidated.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F03" refs="REQ32-DIRECT REQ32-MODEL AC32-DIRECT TD32-DOMAIN">
+        <NAME>Direct conversation creation</NAME>
+        <STEP order="1" ref="DP48-M-AUTH" />
+        <STEP order="2" ref="DP48-M-DIRECT" />
+        <STEP order="3" ref="DP48-M-STORAGE" />
+        <RESULT>Reject self-direct. Normalize the unordered pair, enforce uniqueness in PostgreSQL, and make concurrent requests resolve to the same stable conversation identity. Personal hide is caller-scoped and never deletes or hides peer data.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F04" refs="REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP AC32-GROUP AC32-ROLES TD32-DOMAIN">
+        <NAME>Group and role mutation</NAME>
+        <STEP order="1" ref="DP48-M-AUTH" />
+        <STEP order="2" ref="DP48-M-APPLICATION" />
+        <STEP order="3" ref="DP48-M-GROUP" />
+        <STEP order="4" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="5" ref="DP48-M-STORAGE" />
+        <RESULT>Authorize the actor's current role inside the mutation transaction. Enforce the 100-member maximum, exactly one owner, transfer-before-owner-leave, role restrictions, and interval changes atomically. Rejected operations leave membership and ownership unchanged.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F05" refs="REQ32-MESSAGE REQ32-MEMBERSHIP REQ32-REALTIME REQ32-LIMITS AC32-MESSAGE TD32-DOMAIN">
+        <NAME>Send and publish message</NAME>
+        <STEP order="1" ref="DP48-M-AUTH" />
+        <STEP order="2" ref="DP48-M-APPLICATION" />
+        <STEP order="3" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="4" ref="DP48-M-MESSAGES" />
+        <STEP order="5" ref="DP48-M-STORAGE" />
+        <STEP order="6" ref="DP48-M-REALTIME" />
+        <RESULT>Validate limits and current membership, allocate sequence, resolve idempotency, and persist message plus outbox record atomically. Commit before publication. Dispatcher rechecks recipients and visibility; no uncommitted or duplicate message is published.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F06" refs="REQ32-HISTORY REQ32-MEMBERSHIP REQ32-REALTIME AC32-HISTORY TD32-DOMAIN">
+        <NAME>History and reconnect catch-up</NAME>
+        <STEP order="1" ref="DP48-M-AUTH" />
+        <STEP order="2" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="3" ref="DP48-M-HISTORY" />
+        <STEP order="4" ref="DP48-M-STORAGE" />
+        <RESULT>Use one stable message order and cursor pagination. Every query filters messages by the caller's membership intervals; reconnect and catch-up use the same persisted history query and cannot expose messages from membership gaps.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F07" refs="REQ32-DOCUMENT REQ32-ISOLATION AC32-DOCUMENT INV32-PRESERVE">
+        <NAME>Document metadata in a message</NAME>
+        <STEP order="1" ref="DP48-M-APPLICATION" />
+        <STEP order="2" ref="DP48-M-DOCUMENT" />
+        <STEP order="3" ref="DP48-M-MESSAGES" />
+        <STEP order="4" ref="DP48-M-STORAGE" />
+        <RESULT>Persist and return only document ID/title metadata. No document content is copied and no Chat operation grants or implies Drive access.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F08" refs="REQ32-READ REQ32-HISTORY REQ32-MEMBERSHIP AC32-READ">
+        <NAME>Read marker and unread count</NAME>
+        <STEP order="1" ref="DP48-M-AUTH" />
+        <STEP order="2" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="3" ref="DP48-M-READ" />
+        <STEP order="4" ref="DP48-M-STORAGE" />
+        <RESULT>Advance only the caller's marker monotonically; calculate unread counts from other senders' messages visible in the caller's membership intervals; expose the same persisted state on all devices.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F09" refs="REQ32-MEMBERSHIP REQ32-WS REQ32-REALTIME INV32-WS INV32-PRESERVE">
+        <NAME>Membership removal and revocation barrier</NAME>
+        <STEP order="1" ref="DP48-M-MEMBERSHIP" />
+        <STEP order="2" ref="DP48-M-STORAGE" />
+        <STEP order="3" ref="DP48-M-REALTIME" />
+        <STEP order="4" ref="DP48-M-WS" />
+        <RESULT>Serialize removal against message-sequence allocation and delivery authorization. Close the interval, invalidate its generation, and prevent new protected operations/subscriptions. Revoke established subscriptions and ensure subsequent fan-out targets only currently authorized intervals; stale channel subscriptions receive no later protected events.</RESULT>
+      </FLOW>
+      <FLOW id="DP48-F10" refs="REQ32-PRESERVE INV32-NO-LEGACY TD32-MIGRATION TECH32-POSTGRESQL TECH32-PG18-COMPAT AC32-CLEAN-TARGET">
+        <NAME>Clean database bootstrap design</NAME>
+        <STEP order="1" ref="DP48-M-BOOTSTRAP" />
+        <STEP order="2" ref="DP48-M-STORAGE" />
+        <RESULT>Define only the target conversation schema and required constraints for fresh PostgreSQL 18.4 bootstrap through Goose. The final migration chain does not carry obsolete schema, functions, packages, compatibility structures, or legacy-data migration steps. No migration is executed in this task.</RESULT>
+      </FLOW>
+    </FLOWS>
+
+    <INVARIANTS>
+      <INVARIANT id="DP48-I-HTTP-TREE" refs="REQ32-API TD32-HTTP INV32-ONE-API">The target registers /conversations and its unversioned descendants as the sole conversation HTTP tree; /ws remains separate; /v1, /v2, and compatibility routes are absent.</INVARIANT>
+      <INVARIANT id="DP48-I-DPOP" refs="REQ32-AUTH REQ32-ISOLATION TD32-SECURITY INV32-DPOP">Every protected HTTP request and /ws connection fails closed without a valid session-bound DPoP proof through Internal Auth UDS. Bearer-only credentials and account UUID alone are insufficient.</INVARIANT>
+      <INVARIANT id="DP48-I-SUBSCRIPTION" refs="REQ32-WS REQ32-MEMBERSHIP TD32-SECURITY INV32-WS">Each conversation subscription is authorized independently against current membership and visibility. A connection, cached result, or earlier subscription cannot grant continued access after revocation.</INVARIANT>
+      <INVARIANT id="DP48-I-VISIBILITY" refs="REQ32-MEMBERSHIP REQ32-HISTORY INV32-PRESERVE">Messages are visible only within the viewer's own membership intervals. Rejoining creates a new interval and never exposes messages from the gap.</INVARIANT>
+      <INVARIANT id="DP48-I-DIRECT-UNIQUE" refs="REQ32-DIRECT AC32-DIRECT">One unordered pair of distinct account UUIDs maps to at most one direct conversation, including concurrent creation attempts; self-direct is rejected.</INVARIANT>
+      <INVARIANT id="DP48-I-OWNER" refs="REQ32-GROUP REQ32-ROLES AC32-GROUP AC32-ROLES">Every successful group mutation leaves exactly one owner; owner departure requires transfer to another current member; role capabilities are enforced independently of BFE Drive ADMIN.</INVARIANT>
+      <INVARIANT id="DP48-I-IDEMPOTENCY" refs="REQ32-MESSAGE AC32-MESSAGE">Concurrent retries for the same idempotency key cannot create duplicate messages; identical-content replay returns the original result and different-content replay returns 409. Exact key scope and content equivalence remain open design inputs.</INVARIANT>
+      <INVARIANT id="DP48-I-PERSIST-BEFORE-PUBLISH" refs="REQ32-REALTIME REQ32-MESSAGE TD32-DOMAIN">No message is published before its persistence transaction commits. Delivery is derived from committed records and rechecks current authorized recipients.</INVARIANT>
+      <INVARIANT id="DP48-I-REVOCATION" refs="REQ32-MEMBERSHIP REQ32-WS REQ32-REALTIME INV32-WS">Membership removal/revocation blocks later protected operations and delivery on established subscriptions. Fan-out never targets a revoked membership interval/generation after the revocation barrier.</INVARIANT>
+      <INVARIANT id="DP48-I-DOCUMENT-ISOLATION" refs="REQ32-DOCUMENT REQ32-ISOLATION INV32-PRESERVE">Chat stores document ID/title only and grants no document rights; BFE Drive remains the independent authority for document access.</INVARIANT>
+      <INVARIANT id="DP48-I-READ-MONOTONIC" refs="REQ32-READ AC32-READ">Read markers are monotonic per account and conversation, shared across devices, and cannot be advanced by another account; unread counts exclude own messages and invisible messages.</INVARIANT>
+      <INVARIANT id="DP48-I-LIMITS" refs="REQ32-LIMITS AC32-LIMITS">Group name is at most 256 UTF-8 bytes; group membership is at most 100 including owner; JSON request body is at most 65536 bytes; message text is at most 16384 UTF-8 bytes; history page size defaults to 50 and cannot exceed 100. Invalid input is rejected before state changes or publication.</INVARIANT>
+      <INVARIANT id="DP48-I-CLEAN-DB" refs="REQ32-PRESERVE INV32-NO-LEGACY TD32-MIGRATION TECH32-POSTGRESQL TECH32-PG18-COMPAT AC32-CLEAN-TARGET BP32-CUTOVER">The target schema is clean and target-only, bootstraps on PostgreSQL 18.4 through Goose, contains no legacy schema/functions/packages/compatibility layer, and performs no legacy-data migration.</INVARIANT>
+    </INVARIANTS>
+
+    <DEVELOPMENT_ORDER>
+      <STAGE id="DP48-S01" order="1" name="Freeze architecture invariants" refs="RA32-001 TECH32-001">
+        <DELIVERABLE>Project Owner review of this proposed DevelopmentPlan revision, including unresolved questions.</DELIVERABLE>
+        <DEPENDENCY>RequirementsAnalysis.xml and Technology.xml remain the approved upper-level sources.</DEPENDENCY>
+        <GATE>Do not create Contracts.xml or implementation artifacts until this plan is explicitly approved.</GATE>
+      </STAGE>
+      <STAGE id="DP48-S02" order="2" name="Define clean target persistence boundaries" refs="DP48-M-STORAGE DP48-M-BOOTSTRAP DP48-I-CLEAN-DB BP32-CUTOVER">
+        <DELIVERABLE>After plan approval, define the clean target-only PostgreSQL entities, constraints, transaction/locking boundaries, and Goose bootstrap design in the appropriate downstream GRACE stage.</DELIVERABLE>
+        <DEPENDENCY>DP48-S01.</DEPENDENCY>
+        <GATE>No SQL migration file or database mutation is authorized by this DevelopmentPlan proposal.</GATE>
+      </STAGE>
+      <STAGE id="DP48-S03" order="3" name="Specify authentication and transports" refs="DP48-M-AUTH DP48-M-HTTP DP48-M-WS DP48-I-DPOP DP48-I-SUBSCRIPTION">
+        <DELIVERABLE>After plan approval, define transport and authentication module contracts with DPoP request binding and independent WebSocket subscription authorization.</DELIVERABLE>
+        <DEPENDENCY>DP48-S01; DP48-S02 for persistence-backed membership checks.</DEPENDENCY>
+      </STAGE>
+      <STAGE id="DP48-S04" order="4" name="Specify conversation and membership domain" refs="DP48-M-DIRECT DP48-M-GROUP DP48-M-MEMBERSHIP DP48-I-DIRECT-UNIQUE DP48-I-OWNER DP48-I-VISIBILITY">
+        <DELIVERABLE>After plan approval, define direct/group use-case contracts, role policy, membership intervals, sequence allocation, and concurrency ordering.</DELIVERABLE>
+        <DEPENDENCY>DP48-S02; DP48-S03 for trusted actor identity.</DEPENDENCY>
+      </STAGE>
+      <STAGE id="DP48-S05" order="5" name="Specify messages, history, documents, and read state" refs="DP48-M-MESSAGES DP48-M-HISTORY DP48-M-DOCUMENT DP48-M-READ DP48-I-IDEMPOTENCY DP48-I-DOCUMENT-ISOLATION DP48-I-READ-MONOTONIC">
+        <DELIVERABLE>After plan approval and resolution of the idempotency questions, define contracts for ordered messages, visibility-filtered history, document metadata, and read markers.</DELIVERABLE>
+        <DEPENDENCY>DP48-S02 and DP48-S04.</DEPENDENCY>
+      </STAGE>
+      <STAGE id="DP48-S06" order="6" name="Specify realtime delivery and revocation" refs="DP48-M-REALTIME DP48-I-PERSIST-BEFORE-PUBLISH DP48-I-REVOCATION">
+        <DELIVERABLE>After plan approval, define ordered post-commit event delivery, membership-generation channel authorization, revocation barrier, and history-based reconnect recovery.</DELIVERABLE>
+        <DEPENDENCY>DP48-S02, DP48-S03, DP48-S04, and DP48-S05.</DEPENDENCY>
+      </STAGE>
+      <STAGE id="DP48-S07" order="7" name="Verify mental scenarios and acceptance traceability" refs="DP48-MT-01 DP48-MT-12">
+        <DELIVERABLE>Review the scenarios and checks in this plan before any implementation stage; preserve the requirement/technology trace links.</DELIVERABLE>
+        <DEPENDENCY>DP48-S01 through DP48-S06.</DEPENDENCY>
+      </STAGE>
+      <STAGE id="DP48-S08" order="8" name="Downstream GRACE gates" refs="DP48-I-CLEAN-DB DP48-S07">
+        <DELIVERABLE>Only after explicit approval of this plan: create module contracts; then class/function contracts; then mental scenarios and verification criteria as the relevant downstream artifacts require; only then may a separately authorized implementation stage begin.</DELIVERABLE>
+        <DEPENDENCY>DP48-S01 through DP48-S07 and resolution of all blocking open questions.</DEPENDENCY>
+        <GATE>This issue does not start Contracts.xml, implementation, tests, SQL migrations, database changes, deployment, or release work.</GATE>
+      </STAGE>
+    </DEVELOPMENT_ORDER>
+
+    <ACCEPTANCE_CHECKS>
+      <CHECK id="DP48-C01" refs="REQ32-API TD32-HTTP INV32-ONE-API AC32-API">Route inventory shows only unversioned /conversations HTTP resources and the separate /ws endpoint; /v1, /v2, aliases, and compatibility paths are absent.</CHECK>
+      <CHECK id="DP48-C02" refs="REQ32-AUTH REQ32-ISOLATION TD32-SECURITY INV32-DPOP AC32-AUTH">Valid session-bound DPoP succeeds; missing, invalid, replayed, misbound, or Bearer-only proof fails closed before side effects or protected data disclosure.</CHECK>
+      <CHECK id="DP48-C03" refs="REQ32-WS REQ32-MEMBERSHIP REQ32-REALTIME TD32-SECURITY INV32-WS AC32-WS">Valid DPoP connection does not let a non-member subscribe; every subscription is independently authorized; removing membership blocks subsequent delivery on established subscriptions.</CHECK>
+      <CHECK id="DP48-C04" refs="REQ32-DIRECT AC32-DIRECT DP48-I-DIRECT-UNIQUE">Self-direct is rejected; concurrent creation for the same unordered pair yields one stable conversation; personal hide affects only caller visibility and does not delete messages or alter peer access.</CHECK>
+      <CHECK id="DP48-C05" refs="REQ32-GROUP REQ32-ROLES AC32-GROUP AC32-ROLES DP48-I-OWNER">Group creation at 100 members including owner succeeds and 101 is rejected; owner transfer/leave rules and owner/admin/member permissions hold under concurrent mutation attempts.</CHECK>
+      <CHECK id="DP48-C06" refs="REQ32-MEMBERSHIP REQ32-HISTORY AC32-MEMBERSHIP AC32-HISTORY DP48-I-VISIBILITY">Joining starts a new visibility interval; removal ends it; rejoining never exposes messages from the gap; send and membership mutation have a deterministic serialized order.</CHECK>
+      <CHECK id="DP48-C07" refs="REQ32-MESSAGE REQ32-LIMITS AC32-MESSAGE AC32-LIMITS DP48-I-IDEMPOTENCY">Identical idempotent replay returns the original result, different content returns 409, concurrent replay creates one message, text limit 16384 UTF-8 bytes is enforced, and invalid requests cause no side effects.</CHECK>
+      <CHECK id="DP48-C08" refs="REQ32-HISTORY AC32-HISTORY DP48-I-VISIBILITY">History defaults to 50, allows at most 100, uses stable cursor ordering, and filters every page and reconnect catch-up through the caller's membership intervals.</CHECK>
+      <CHECK id="DP48-C09" refs="REQ32-DOCUMENT REQ32-ISOLATION AC32-DOCUMENT DP48-I-DOCUMENT-ISOLATION">Message history/events preserve document ID and title but contain no copied document content or implied Drive grant.</CHECK>
+      <CHECK id="DP48-C10" refs="REQ32-READ AC32-READ DP48-I-READ-MONOTONIC">Read marker cannot decrease, cannot be changed for another account, is shared across devices, and unread counts exclude own and invisible messages.</CHECK>
+      <CHECK id="DP48-C11" refs="REQ32-REALTIME REQ32-MESSAGE AC32-REALTIME DP48-I-PERSIST-BEFORE-PUBLISH DP48-I-REVOCATION">Only committed messages are published; delivery rechecks current eligible intervals; revoked intervals are never later fan-out targets; reconnect recovers through authorized history.</CHECK>
+      <CHECK id="DP48-C12" refs="REQ32-PRESERVE INV32-NO-LEGACY TD32-MIGRATION TECH32-POSTGRESQL TECH32-PG18-COMPAT AC32-CLEAN-TARGET DP48-I-CLEAN-DB">A fresh PostgreSQL 18.4 database can be bootstrapped by the proposed clean target-only Goose chain; target schema excludes obsolete legacy structures and no legacy-data migration is specified.</CHECK>
+      <CHECK id="DP48-C13" refs="REQ32-ISOLATION AC32-ISOLATION INV32-PRESERVE">Account UUID alone grants no authorization; out-of-scope requests fail without leaking protected conversation or document data.</CHECK>
+      <CHECK id="DP48-C14" refs="REQ32-LIMITS AC32-LIMITS DP48-I-LIMITS">Group name 256 UTF-8 byte limit, JSON body 65536 byte limit, member limit 100, text limit 16384 byte limit, and history page limit 100 are checked before mutation or publication.</CHECK>
+    </ACCEPTANCE_CHECKS>
+
+    <MENTAL_SCENARIOS>
+      <MENTAL_SCENARIO id="DP48-MT-01" refs="DP48-C01 REQ32-API TD32-HTTP INV32-ONE-API">
+        <GIVEN>The target transport registry is inspected.</GIVEN>
+        <WHEN>Every HTTP route is enumerated and the WebSocket endpoint is listed separately.</WHEN>
+        <EXPECTED>Only /conversations and unversioned descendants are conversation HTTP routes; /ws remains separate; /v1, /v2 and compatibility aliases are absent.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-02" refs="DP48-C02 DP48-C03 REQ32-AUTH REQ32-WS INV32-DPOP INV32-WS">
+        <GIVEN>A valid user session and a WebSocket connection attempt.</GIVEN>
+        <WHEN>Requests use valid DPoP, missing proof, misbound/replayed proof, Bearer-only auth, and a valid connection attempts a non-member subscription.</WHEN>
+        <EXPECTED>Only valid bound DPoP authenticates; the non-member subscription is denied even on an authenticated connection; all rejected paths produce no protected data disclosure.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-03" refs="DP48-C04 REQ32-DIRECT AC32-DIRECT DP48-I-DIRECT-UNIQUE">
+        <GIVEN>Two distinct account UUIDs concurrently request the same direct conversation.</GIVEN>
+        <WHEN>Both requests race at creation, and a separate request attempts a self-direct.</WHEN>
+        <EXPECTED>Both concurrent requests resolve to the same direct conversation identity; self-direct is rejected without creating state.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-04" refs="DP48-C05 REQ32-GROUP REQ32-ROLES AC32-GROUP AC32-ROLES DP48-I-OWNER">
+        <GIVEN>A group with an owner, admins, and ordinary members.</GIVEN>
+        <WHEN>Each role attempts allowed and forbidden mutations; the owner attempts to leave before and after transfer; membership count reaches 100 and then 101.</WHEN>
+        <EXPECTED>Only permitted role operations succeed; owner cannot leave without a transfer to another current member and cannot leave as last current member; exactly one owner remains; 100 is accepted and 101 rejected.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-05" refs="DP48-C06 REQ32-MEMBERSHIP REQ32-HISTORY AC32-MEMBERSHIP AC32-HISTORY DP48-I-VISIBILITY">
+        <GIVEN>An account joins a group, is removed, and later rejoins after messages were sent in each period and in the gap.</GIVEN>
+        <WHEN>It requests history and reconnect catch-up after rejoining.</WHEN>
+        <EXPECTED>Only messages inside its own membership intervals are visible; gap messages remain hidden; membership removal and message sequence allocation have a deterministic order.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-06" refs="DP48-C07 REQ32-MESSAGE REQ32-LIMITS AC32-MESSAGE AC32-LIMITS DP48-I-IDEMPOTENCY">
+        <GIVEN>A current member submits a message and concurrently retries the same idempotency key.</GIVEN>
+        <WHEN>Retries contain identical content, different content, and boundary-sized or oversized text.</WHEN>
+        <EXPECTED>One persisted message is created; identical retry returns the original result; different content returns 409; 16384 UTF-8 bytes is accepted and larger text is rejected before mutation. Key scope/content equivalence must be resolved before the downstream contract.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-07" refs="DP48-C08 REQ32-HISTORY REQ32-MEMBERSHIP AC32-HISTORY">
+        <GIVEN>A member requests history with no page size, a page size of 100, and a page size above 100, then reconnects after missing events.</GIVEN>
+        <WHEN>History and catch-up are read through the same authorization-filtered query.</WHEN>
+        <EXPECTED>Default is 50; maximum is 100; over-limit input is rejected; order is stable; messages outside the viewer's membership intervals are not returned.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-08" refs="DP48-C09 REQ32-DOCUMENT REQ32-ISOLATION AC32-DOCUMENT">
+        <GIVEN>A member sends a message with optional document ID and title.</GIVEN>
+        <WHEN>The message is persisted, returned in history, and published as an event.</WHEN>
+        <EXPECTED>Both metadata fields are preserved; document content is not copied; the Chat service does not grant Drive access or treat membership as document authorization.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-09" refs="DP48-C11 REQ32-REALTIME REQ32-MEMBERSHIP REQ32-WS AC32-REALTIME AC32-WS DP48-I-REVOCATION">
+        <GIVEN>A message transaction, a delayed publisher, an established member subscription, and a concurrent membership removal.</GIVEN>
+        <WHEN>The message commits before or after the removal's serialized authorization boundary and the dispatcher evaluates delivery.</WHEN>
+        <EXPECTED>Only committed messages are eligible; delivery is ordered against the revocation barrier; dispatcher rechecks current membership and never targets a revoked interval after the barrier; reconnect uses authorized persisted history.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-10" refs="DP48-C10 REQ32-READ AC32-READ DP48-I-READ-MONOTONIC">
+        <GIVEN>Two devices for one account, another account's messages, own messages, and messages outside a visibility interval.</GIVEN>
+        <WHEN>The account advances its read marker and requests unread counts from either device.</WHEN>
+        <EXPECTED>The marker is monotonic and shared; another account cannot advance it; unread counts include only visible messages from other senders.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-11" refs="DP48-C12 REQ32-PRESERVE INV32-NO-LEGACY TD32-MIGRATION TECH32-POSTGRESQL TECH32-PG18-COMPAT AC32-CLEAN-TARGET">
+        <GIVEN>A fresh PostgreSQL 18.4 database and the proposed target-only Goose migration chain.</GIVEN>
+        <WHEN>The chain is later validated in an explicitly authorized downstream stage.</WHEN>
+        <EXPECTED>Only active clean-target schema is created; no obsolete legacy tables/functions/packages or compatibility structures are created; no legacy-data migration is present. This issue itself executes no migration.</EXPECTED>
+      </MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP48-MT-12" refs="DP48-C13 DP48-C14 REQ32-ISOLATION REQ32-LIMITS AC32-ISOLATION AC32-LIMITS DP48-I-LIMITS">
+        <GIVEN>Requests with an untrusted sender field, account UUID without valid auth, oversized JSON, overlong group name, and oversized membership set.</GIVEN>
+        <WHEN>Each invalid request reaches the target API.</WHEN>
+        <EXPECTED>Trusted identity comes only from Internal Auth; invalid authentication/input is rejected before state changes or publication; no protected data leaks.</EXPECTED>
+      </MENTAL_SCENARIO>
+    </MENTAL_SCENARIOS>
+
+    <OPEN_QUESTIONS>
+      <OPEN_QUESTION id="DP48-OQ-IDEMPOTENCY-SCOPE" status="OPEN" blocking="true" refs="REQ32-MESSAGE AC32-MESSAGE DP48-D-IDEMPOTENCY DP48-M-MESSAGES">The approved artifacts require idempotent replay but do not define the uniqueness scope of an idempotency key (for example, per sender, per conversation, or another scope). Resolve the exact scope before authoring the message contract or selecting the corresponding uniqueness constraint.</OPEN_QUESTION>
+      <OPEN_QUESTION id="DP48-OQ-IDEMPOTENCY-EQUIVALENCE" status="OPEN" blocking="true" refs="REQ32-MESSAGE AC32-MESSAGE DP48-D-IDEMPOTENCY DP48-M-MESSAGES">The approved artifacts do not define the canonical content-equivalence comparison for a replay. Resolve which validated request fields are compared and how optional document metadata participates before authoring the message contract.</OPEN_QUESTION>
+      <OPEN_QUESTION id="DP48-OQ-HIDE-RESTORE" status="OPEN" blocking="false" refs="REQ32-DIRECT AC32-DIRECT DP48-M-DIRECT">REQ32-DIRECT defines caller-scoped personal hide but does not define whether an incoming message or reopening automatically restores visibility. The plan therefore specifies only isolation and non-deletion; the restore trigger must be confirmed before the direct-conversation contract if it is in scope.</OPEN_QUESTION>
+      <OPEN_QUESTION id="DP48-OQ-CURSOR-ERROR" status="OPEN" blocking="false" refs="REQ32-HISTORY AC32-HISTORY DP48-M-HISTORY">The approved artifacts define cursor pagination, default page size, and maximum page size but do not specify the exact response for malformed, expired, or foreign-conversation cursors. Resolve the API error mapping in the downstream transport/module contract without weakening visibility checks.</OPEN_QUESTION>
+    </OPEN_QUESTIONS>
+
+    <OUT_OF_SCOPE>
+      <ITEM>Do not edit RequirementsAnalysis.xml, Technology.xml, Contracts.xml, MentalScenarios.xml, QualityRequirements.xml, workflows, source code, tests, migrations, or deployment configuration.</ITEM>
+      <ITEM>Do not create module/class/function contracts, implementation code, implementation tests, SQL migrations, database changes, or runtime changes in this issue.</ITEM>
+      <ITEM>Do not add legacy support, compatibility layers, /v1 or /v2 HTTP routes, legacy-client support, or legacy-data migration.</ITEM>
+      <ITEM>Do not modify BFE Drive or client repositories, inspect production data, deploy, or merge this PR.</ITEM>
+    </OUT_OF_SCOPE>
+    <GATE>Submit this proposed DevelopmentPlan for Engineering Orchestrator review and Project Owner Human Approval. Keep status PROPOSED / AWAITING_HUMAN_APPROVAL. Stop after opening the PR; do not proceed to Contracts.xml or implementation.</GATE>
+  </ISSUE48_DEVELOPMENT_REVISION>
 </DEVELOPMENT_PLAN>
