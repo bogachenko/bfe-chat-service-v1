@@ -56,7 +56,65 @@
 
 **Architecture candidate under the fixed constraints:** use ntfy's long-lived HTTP JSON/SSE stream for in-app realtime. For optional best-effort Android background notifications, BFE itself owns a native foreground service that is started from a visible activity only after explicit user enablement, displays a persistent accurate notification with a stop action, and turns opaque wakeToken events into generic BFE notifications. Android 12+ restricts starting FGS from the background. Android 14+ requires the service type and corresponding permission. For a continuous stream, `dataSync` is unsuitable for Android 15+ targets because its background use is limited to six hours per 24 hours; `remoteMessaging` is not assumed to apply because its documented purpose is text-message transfer/continuity between devices. `specialUse` is only a conditional candidate if no other type accurately fits; it needs `FOREGROUND_SERVICE_SPECIAL_USE`, a manifest subtype property and Google Play declaration/review. Play policy requires user benefit, user awareness/control and a justified duration; approval is not guaranteed. Android 13+ ordinary notifications require runtime `POST_NOTIFICATIONS` permission and channels may be disabled. Do not request battery-optimization exemption by default.
 
-FCM/Firebase and UnifiedPush are excluded target alternatives under the current Project Owner constraints; do not implement or substitute either. If no FGS type/policy path is accepted, background delivery remains a blocking product limitation to return to the Project Owner, not a reason to silently change the constraints. Publisher-controlled BFE application data is a JSON object with exactly one field, `wakeToken`, distinct from the ntfy transport JSON envelope (`id`, `time`, `event`, `topic`, etc.). Envelope metadata is never BFE message identity/order/cursor or authorization. The target history contract mandates stable persisted message identity, monotonic conversation-scoped order and server-issued cursor pagination; current API conformance is unverified and blocking. Project Owner approved exact-conversation notification routing: a separate current-session/DPoP-authorized lookup must resolve opaque wakeToken, re-check current membership, then open the corresponding conversation. wakeToken contains no conversation/user/message identifiers and grants no authority. Lookup schema, token lifetime/replay/revocation and FGS/Google Play eligibility remain blocking.
+FCM/Firebase and UnifiedPush are excluded target alternatives under the current Project Owner constraints; do not implement or substitute either. If no FGS type/policy path is accepted, background delivery remains a blocking product limitation to return to the Project Owner, not a reason to silently change the constraints. Publisher-controlled BFE application data is a JSON object with exactly one field, `wakeToken`, distinct from the ntfy transport JSON envelope (`id`, `time`, `event`, `topic`, etc.). Envelope metadata is never BFE message identity/order/cursor or authorization. The target history contract mandates stable persisted message identity, monotonic conversation-scoped order and server-issued cursor pagination; current API conformance is unverified and blocking. Project Owner approved exact-conversation notification routing: a separate current-session/DPoP-authorized lookup must resolve opaque wakeToken, re-check current membership, then open the corresponding conversation. wakeToken contains no conversation/user/message identifiers and grants no authority. The proposed backend lookup contract is documented below. Project Owner approval of the proposed 30-day token lifetime and reusable/non-consuming lookup remains blocking; the existing schema also lacks a unique constraint on wake_token and explicit expiry storage/enforcement. FGS/Google Play eligibility remains a separate blocker.
+
+
+## Backend notification-target lookup contract — OQ36-NTFY-12
+
+**Status: PROPOSED_NOT_APPROVED; implementation blocked.** Source review was limited to this repository's PR branch and existing backend files. No endpoint, migration, source code, or tests were changed.
+
+### Existing backend mechanisms verified
+
+- `internal/issue25/http.go` already enforces the protected HTTP boundary: exactly one `Authorization: DPoP <access-token>` header and one `DPoP` proof header, validates the caller through the existing `Validator.ValidateCaller` / Internal Auth UDS path, and binds the proof to the HTTP method and public HTTPS path. Query strings are rejected.
+- `internal/authentication/authentication.go` revalidates the session through Internal Auth and verifies DPoP key binding, `htm`, `htu`, `ath`, proof freshness and replay. The lookup must reuse this boundary, not create a parallel auth mechanism.
+- `internal/issue25/notify.go` creates one server-side notification attempt per active recipient and message. `internal/issue25/realtime.go` publishes the opaque `wakeToken` only; `WakeToken()` uses the existing UUIDv4 generator.
+- `issue25_publish_attempts` already stores `wake_token`, `viewer_id`, `membership_epoch`, `conversation_id` and `created_at`. Membership history is stored in `issue25_memberships`; the current active membership row has `leave_boundary IS NULL`. The existing schema does **not** declare `wake_token` unique and does not store an explicit expiry/revocation timestamp.
+- `internal/issue25/history.go` checks current membership and visibility intervals when reading history. The lookup must return only a conversation route; it must not return or expose message data.
+
+### Proposed HTTP contract
+
+| Item | Requirement |
+|---|---|
+| Method/path | `POST /conversations/notification-target` |
+| Request | `Content-Type: application/json`; exactly `{"wakeToken":"opaque-token"}`; no query string or additional fields |
+| Authentication | Existing `Authorization: DPoP <access-token>` plus one `DPoP` proof; validate the current BFE session through Internal Auth and bind DPoP to the exact POST path |
+| Server lookup | Match exactly one `issue25_publish_attempts.wake_token` record; require `viewer_id == authenticated account` and an unexpired token |
+| Current authorization | Re-check current Chat availability and current active membership; the active `membership_epoch` must equal the record's `membership_epoch`. Repeat on every lookup; never trust cached ACLs or client-supplied IDs |
+| Success | `200` with only `{"conversationId":"uuid"}`; set `Cache-Control: no-store` and `X-Content-Type-Options: nosniff` |
+| Invalid body/token syntax | `400 VALIDATION_ERROR` |
+| Missing/invalid/revoked session or DPoP | Existing `401` authentication error mapping |
+| Unknown, expired, foreign-account, removed/rejoined epoch, ambiguous mapping or unavailable conversation | Same non-disclosing `404 NOT_FOUND`; no conversation ID or existence distinction |
+| Internal Auth/database unavailable | `503`; do not return routing data |
+
+The client then fetches history through the existing authorized `GET /conversations/{conversationId}/history` endpoint. History applies current membership and membership-interval visibility rules; `wakeToken` does not identify a message and does not authorize history.
+
+### Token lifetime, reuse and revocation — proposed policy
+
+- **Lifetime proposal:** 30 days from the server-recorded `created_at`, with absolute expiry not extended by lookup. This is a proposal, not a Project Owner decision.
+- **Reuse:** lookup is repeatable and non-consuming until expiry. Repeated taps for the same still-authorized recipient return the same conversation ID; no lookup changes token state or extends lifetime. Security comes from current-session DPoP, recipient binding and current membership checks, not one-time-token semantics.
+- **Membership revocation:** removal/rejoin changes the active membership epoch; the old attempt's epoch no longer matches, so lookup returns the same 404 as any invalid token. Re-joining does not restore access to messages in the membership gap.
+- **Logout/account switch:** each request revalidates the current session through existing Internal Auth. The client must clear notification-routing state on logout/switch; a new account cannot resolve a token whose `viewer_id` differs. The BFE auth owner must confirm that logout revokes the old session in Internal Auth.
+- **Token-specific revocation:** no separate bearer capability or public revoke endpoint is proposed. Access is denied by session revocation, recipient mismatch, membership-epoch change, Chat availability and expiry. Because `wake_token` is not authority, knowing it alone never grants access.
+- **Schema prerequisite:** add a database uniqueness constraint/index for `wake_token` and deterministic 30-day expiry enforcement in a separately approved downstream contract/migration. The current schema alone does not prove uniqueness or expiry enforcement; no migration is part of this requirements task.
+- Never put `wakeToken` in a URL or application logs. Do not return message ID, message content, document metadata, user IDs, membership details or token metadata in the success response.
+
+### Negative scenarios and acceptance
+
+1. Missing/invalid DPoP, expired/revoked session, or a DPoP proof bound to another method/path: reject before lookup; no routing data.
+2. Account B submits account A's valid token: return the same 404 as unknown/expired token.
+3. Recipient removed or removed then rejoined: active epoch mismatch; same 404 and no conversation ID.
+4. Expired, unknown, malformed or ambiguous (multiple-row) token mapping: 400 only for malformed syntax; otherwise the same 404, with no existence leak.
+5. Token tapped twice before expiry by the same currently authorized account: same conversation ID both times; no consumption, expiry extension or side effect.
+6. Session revoked after the notification was delivered: revalidation fails; a token cannot keep the old session alive.
+7. Chat unavailable/disabled or database/Internal Auth unavailable: no conversation ID; deny or return 503 according to the error mapping above.
+8. After a successful lookup, history still independently filters current membership intervals and document access remains governed by BFE Drive.
+
+### Remaining approval/evidence gates
+
+- **OQ36-NTFY-12 remains BLOCKING.** Project Owner must approve or change the proposed 30-day lifetime and repeat-use policy.
+- BFE auth owner must confirm logout/session revocation behavior through existing Internal Auth.
+- Downstream approved schema work must enforce unique token mapping and deterministic expiry before implementation.
+- The contract remains a GRACE Requirements Analysis proposal; no endpoint implementation, schema change, migration or test change is authorized.
 
 Official evidence: [ntfy subscription API](https://docs.ntfy.sh/subscribe/api/), [Android Doze](https://developer.android.com/training/monitoring-device-state/doze-standby), [foreground-service types](https://developer.android.com/develop/background-work/services/fgs/service-types), [background FGS start restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start), [Android 15 FGS timeout](https://developer.android.com/develop/background-work/services/fgs/timeout), [Google Play FGS declaration/review](https://support.google.com/googleplay/android-developer/answer/13392821?hl=en-GB), [notification permission](https://developer.android.com/develop/ui/compose/notifications/notification-permission), [ntfy instant delivery](https://docs.ntfy.sh/subscribe/phone/), [ntfy self-hosted FCM](https://docs.ntfy.sh/config/), [UnifiedPush Android spec](https://unifiedpush.org/developers/spec/android/), [FCM force-stop behavior](https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages).
 
@@ -75,7 +133,7 @@ Official evidence: [ntfy subscription API](https://docs.ntfy.sh/subscribe/api/),
 
 - **OQ36-NTFY-10:** RESOLVED by Project Owner on 2026-10-25: best-effort BFE-owned Android notifications are accepted. The exact FGS type, consuming-host target SDK/manifest and Google Play eligibility remain blocking evidence gates.
 - **OQ36-NTFY-11:** RESOLVED by Project Owner on 2026-10-25: tapping a notification must open the corresponding conversation. The separately authorized lookup contract remains blocking as OQ36-NTFY-12.
-- **OQ36-NTFY-12:** BLOCKING: define endpoint/schema, current-session DPoP authorization, server-side token mapping, membership re-check, expiry/replay/revocation/account-switch behavior and negative cross-account tests.
+- **OQ36-NTFY-12:** BLOCKING — proposed contract is in the section “Backend notification-target lookup contract — OQ36-NTFY-12”. Project Owner decision is required for the proposed 30-day absolute TTL and reusable/non-consuming lookup; BFE auth owner must confirm logout/session revocation; an approved downstream schema change must enforce unique wake_token mapping and deterministic expiry. No implementation until these and the GRACE gates are approved.
 
 ## Production boundaries
 - bfe-drive is production and strictly READ-ONLY.
