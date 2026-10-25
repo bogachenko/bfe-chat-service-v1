@@ -44,7 +44,8 @@ jobs:
           server_version="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc 'SHOW server_version')"
           server_version_num="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc 'SHOW server_version_num')"
           printf 'PostgreSQL server_version=%s server_version_num=%s\n' "$server_version" "$server_version_num"
-          test "$server_version" = "18.4"
+          server_version_release="${server_version%% *}"
+          test "$server_version_release" = "18.4"
           test "$server_version_num" = "180004"
 
           public_tables="$(psql "$BFE_CHAT_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")"
