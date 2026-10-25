@@ -67,13 +67,13 @@ workspace "BFE Chat Service" "GRACE architecture views: requirements, technology
         admin -> clients "Administrative operations"
         clients -> chat.ingress "Use authoritative HTTP Chat API; current approved baseline also exposes Centrifuge /ws, which this draft proposes replacing with ntfy" "HTTPS + DPoP for HTTP; target realtime auth OPEN"
         chat -> ntfy "Publish minimal post-commit wake-up signals for server-authorized recipients" "ntfy publish API; credentials/topic ACL/retry contract OPEN"
-        clients -> ntfy "Subscribe to authorized realtime signals; transport and per-topic authorization unresolved" "SSE/HTTP stream/WebSocket TBD"
+        clients -> ntfy "Subscribe to minimal authorized wakeToken signals. BFE Android Client owns its system notification; ntfy-app notifications do not satisfy that requirement. Background delivery is conditional on client lifecycle and is not guaranteed." "ntfy stream; FGS candidate and Android/Google Play policy OPEN"
         clients -> drive "Open/download documents under Drive ACL" "HTTPS"
     }
 
     views {
         systemContext chat "requirements-c1-context" {
-            description "DRAFT C1 target context: ntfy is proposed to replace Centrifuge for realtime. Existing implementation and downstream contracts remain unchanged until Human Approval; ntfy authorization and revocation are open dependencies."
+            description "DRAFT C1 target context: ntfy replaces Centrifuge as the proposed realtime target. Android system notifications are a separate BFE-client responsibility triggered by opaque wakeToken; foreground-service eligibility, notification permission and lifecycle limits remain blocking. Existing implementation and downstream contracts remain unchanged until Human Approval."
             include *
             autolayout lr
         }

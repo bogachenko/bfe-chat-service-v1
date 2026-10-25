@@ -23,6 +23,7 @@
 | REQ36-RT-08: document authorization remains independent | REQ32-DOCUMENT, REQ32-ISOLATION | UC36-REALTIME-RECOVERY | BP36-NTFY-REALTIME | INV36-NTFY-DRIVE-ACL | AC36-RT-08 | MS36-NTFY-06 |
 | REQ36-RT-09: production boundary and release compatibility | REQ32-PRESERVE | UC36-RELEASE-READINESS | BP36-NTFY-RELEASE-READINESS | INV36-NTFY-PRODUCTION-BOUNDARY | AC36-RT-09 | MS36-NTFY-08 |
 | REQ36-RT-10: supported Web/Android transport and lifecycle | REQ32-AUTH, REQ32-ISOLATION, REQ32-HISTORY | UC36-REALTIME-RECOVERY | BP36-NTFY-REALTIME | INV36-NTFY-SESSION | AC36-RT-10 | MS36-NTFY-07 |
+| REQ36-RT-11: BFE-owned Android system notification is distinct from ntfy app notification; best-effort lifecycle and history recovery | REQ32-AUTH, REQ32-HISTORY, REQ36-RT-05, REQ36-RT-10 | UC36-ANDROID-SYSTEM-NOTIFICATION | BP36-ANDROID-NOTIFICATION | INV36-NTFY-ANDROID-OWNERSHIP, INV36-NTFY-NO-AUTHORITY | AC36-RT-11 | MS36-NTFY-09/10/11 |
 
 ## Mental scenarios
 
@@ -34,6 +35,24 @@
 - **MS36-NTFY-06:** a chat signal/document reference does not bypass Drive ACLs or expose protected content.
 - **MS36-NTFY-07:** unsupported browser auth or Android background delivery fails safely and reconciles on resume.
 - **MS36-NTFY-08:** unknown deployed integration/rollback compatibility keeps implementation and rollout blocked.
+
+## Android system notification lifecycle — requirements draft
+
+**Status: PROPOSED_NOT_APPROVED. Current XML/C1 parser gates: PENDING for this revision.** The ntfy Android app's own notification is not a BFE notification. BFE Android Client must post its own generic system notification from the opaque `wakeToken` while its eligible stream/service is active. The current Flutter source constraints still prohibit FCM and a required separate app, so a foreground-service-based ntfy subscription is the only current-constraint-preserving candidate; it is not cleared for Google Play or production.
+
+| Android state | Draft behavior | Limit |
+|---|---|---|
+| App foreground | ntfy wake-up refreshes the open chat through HTTP/PostgreSQL; notification rendering is a separate client UX choice | A missing event never proves that no message exists |
+| Background / screen off | BFE-owned system notification is best-effort only while the client stream/service remains active | Foreground service needs an ongoing notification and must satisfy platform/policy requirements |
+| Doze | Direct network streams can be suspended; ntfy's own app documents FGS-based instant delivery, but that behavior must be verified for BFE | No universal latency/delivery guarantee |
+| OS process death | Delivery/restart is not guaranteed | Reconcile history on next launch/resume |
+| User force-stop | No delivery is promised until manual relaunch | Reconcile history after the user reopens BFE |
+| Notifications denied/channel disabled | No visible system notification | Respect POST_NOTIFICATIONS (Android 13+) and user channel settings |
+| Chat administratively disabled | Existing subscription may receive only wakeToken; no new operations/history/subscriptions | After re-enable, use authorized history catch-up; do not add periodic Drive-session checks |
+
+**Mechanism comparison:** FCM is Android's recommended route for chat notifications during Doze, but violates the current no-FCM requirement and needs an explicit Project Owner override. UnifiedPush avoids Firebase but requires a BFE connector and a configured distributor, conflicting with the no-extra-app requirement unless that requirement changes. A foreground service preserves current constraints only conditionally; Android 14+ requires service type/permission, specialUse requires a subtype property and Google Play review, and Android 12+ restricts background starts. wakeToken is non-identifying and non-authorizing, so notification tap opens the generic Chat entry point; exact conversation routing requires a separately approved backend lookup contract.
+
+Official evidence: [Android Doze](https://developer.android.com/training/monitoring-device-state/doze-standby), [foreground-service types](https://developer.android.com/develop/background-work/services/fgs/service-types), [notification permission](https://developer.android.com/develop/ui/compose/notifications/notification-permission), [ntfy instant delivery](https://docs.ntfy.sh/subscribe/phone/), [ntfy self-hosted FCM](https://docs.ntfy.sh/config/), [UnifiedPush Android spec](https://unifiedpush.org/developers/spec/android/), [FCM force-stop behavior](https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages).
 
 ## Blocking questions
 | ID | Owner | Required evidence and closure |
@@ -47,6 +66,9 @@
 | OQ36-NTFY-07 | Backend owner and Project Owner | Failure analysis, retry/outbox and telemetry tests; persisted send independent of ntfy |
 | OQ36-NTFY-08 | Project Owner, Release Manager and client maintainers | Deployed dependency inventory and rollout/rollback plan; production impact evidenced |
 | OQ36-NTFY-09 | Project Owner | RESOLVED — target-direction decision recorded in [Issue #36 comment](https://github.com/bogachenko/bfe-chat-service/issues/36#issuecomment-6385730270); draft approval remains blocked by other gates |
+
+- **OQ36-NTFY-10:** Project Owner must choose whether to retain the current no-FCM/no-extra-app constraints with best-effort FGS delivery or approve a requirements change.
+- **OQ36-NTFY-11:** Exact-conversation navigation is unresolved because wakeToken contains no identifying metadata; generic Chat entry is the current draft behavior.
 
 ## Production boundaries
 - bfe-drive is production and strictly READ-ONLY.
@@ -113,3 +135,7 @@ The draft's supersession note now explicitly distinguishes the historical wordin
 - Technology, implementation and deployment: **BLOCKED**.
 
 No approved baseline, production repository, deployment, configuration, database, migration or infrastructure was changed.
+
+## Administrative Chat disablement — cross-component decision (2026-10-24)
+
+The existing subscription may continue receiving only the opaque `wakeToken` while Chat is administratively disabled. No new Chat operations, history requests or subscriptions are allowed while disabled. Re-enabling Chat triggers authorized history catch-up. This administrative state is distinct from membership-epoch/session revocation and does not add periodic BFE-session checks or Drive callbacks.
