@@ -151,11 +151,11 @@ The existing subscription may continue receiving only the opaque `wakeToken` whi
 
 - Repository/branch: `bogachenko/bfe-chat-service` / `docs/issue-36-ntfy-realtime-requirements-draft`.
 - PR: [#37](https://github.com/bogachenko/bfe-chat-service/pull/37), remains draft.
-- Validated HEAD: `c957032af62ea024470a7d2a1d692b78f8a3834c`.
-- `RequirementsAnalysis.xml` blob: `49f39c7d1567e05b09f355644d20371fb62e6b8e`.
+- Validated HEAD: `d4605adb534c95f483e19896d9eb5bc8b7234baf`. The current branch head may advance for report-only changes; the validated XML/C1 blobs remain unchanged.
+- `RequirementsAnalysis.xml` blob: `39941295d71e35fa5c8efccf45db79a24deda3df`.
 - C1 `workspace.dsl` blob: `a4e303085b83c61c10409ce63cc83518cdb62efb`.
-- Workflow: [run 40192915559](https://github.com/bogachenko/bfe-chat-service/actions/runs/40192915559) — **success**.
+- Workflow: [run 40193780983](https://github.com/bogachenko/bfe-chat-service/actions/runs/40193780983) — **success**.
 - XML parser: **PASS**; root `REQUIREMENTS_ANALYSIS`; 111 IDs, 111 unique, 0 duplicates; 322 local references resolved; one historical approval reference retained as external provenance.
 - Structurizr C1 parser: **PASS**, exit code 0, pinned image digest `sha256:721136283c2f9cf1ba69037bc9de136c579d66fdcb2d771cb60546ec68def1a5`.
 - Independent QA: **NOT RUN**. Human Approval: **NOT GRANTED**. Technology, implementation and deployment remain **BLOCKED**.
-- This report update does not change the validated XML or C1 blobs. It does not approve the requirements or establish Google Play eligibility.
+- This report-only update does not change the validated XML or C1 blobs. It does not approve the requirements or establish Google Play eligibility.
