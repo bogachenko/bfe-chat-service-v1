@@ -70,12 +70,13 @@ FCM/Firebase and UnifiedPush are excluded target alternatives under the current 
 - `internal/issue25/notify.go` creates one server-side notification attempt per active recipient and message. `internal/issue25/realtime.go` publishes the opaque `wakeToken` only; `WakeToken()` uses the existing UUIDv4 generator.
 - `issue25_publish_attempts` already stores `wake_token`, `viewer_id`, `membership_epoch`, `conversation_id` and `created_at`. Membership history is stored in `issue25_memberships`; the current active membership row has `leave_boundary IS NULL`. The existing schema does **not** declare `wake_token` unique and does not store an explicit expiry/revocation timestamp.
 - `internal/issue25/history.go` checks current membership and visibility intervals when reading history. The lookup must return only a conversation route; it must not return or expose message data.
+- The reviewed HTTP router has no `/conversations/notification-target` route today; it must be added as a fixed route before the existing one-segment direct/group dispatch and dynamic conversation-ID parsing. In the reviewed request path, an explicit Chat-disabled enforcement hook was not established; the backend owner must identify/prove that policy before implementing this route.
 
 ### Proposed HTTP contract
 
 | Item | Requirement |
 |---|---|
-| Method/path | `POST /conversations/notification-target` |
+| Method/path | `POST /conversations/notification-target`; fixed route must precede dynamic conversation path parsing |
 | Request | `Content-Type: application/json`; exactly `{"wakeToken":"opaque-token"}`; no query string or additional fields |
 | Authentication | Existing `Authorization: DPoP <access-token>` plus one `DPoP` proof; validate the current BFE session through Internal Auth and bind DPoP to the exact POST path |
 | Server lookup | Match exactly one `issue25_publish_attempts.wake_token` record; require `viewer_id == authenticated account` and an unexpired token |
@@ -113,6 +114,7 @@ The client then fetches history through the existing authorized `GET /conversati
 
 - **OQ36-NTFY-12 remains BLOCKING.** Project Owner must approve or change the proposed 30-day lifetime and repeat-use policy.
 - BFE auth owner must confirm logout/session revocation behavior through existing Internal Auth.
+- Backend owner must identify/prove how Chat administrative disablement is enforced on the new route; the existing reviewed route path does not establish that gate.
 - Downstream approved schema work must enforce unique token mapping and deterministic expiry before implementation.
 - The contract remains a GRACE Requirements Analysis proposal; no endpoint implementation, schema change, migration or test change is authorized.
 
