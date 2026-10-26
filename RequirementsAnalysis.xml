@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service">
 
-
   
   <REQUIREMENTS_GRAPH id="RA36-001">
     <GOAL id="GOAL36-001">One unified direct/group conversation service whose sole conversation HTTP resource tree is /conversations. Realtime updates use minimal opaque wake events; protected message/history content is retrieved through the authenticated Chat API using BFE Drive Internal Auth and DPoP. Activating a system notification opens the corresponding conversation only after current authorization is verified.</GOAL>
     <REQUIREMENT id="REQ32-API" refs="REQ32-DIRECT REQ32-GROUP"><RULE>All target conversation HTTP operations use /conversations and its unversioned descendants. The target exposes no /v1 or /v2 conversation APIs.</RULE></REQUIREMENT>
     <REQUIREMENT id="REQ32-AUTH" refs="REQ32-ISOLATION REQ36-WAKE-TOKEN REQ36-CHAT-STATE"><RULE>Every protected Chat API request, including wakeToken resolution and history retrieval, requires a valid DPoP proof bound to the validated BFE Drive session through existing Internal Auth; plain Bearer is not accepted. Each request independently checks current Chat availability, authenticated identity, conversation membership and message visibility. Receiving a wake event or possessing a wakeToken is not authentication or authorization and never grants access to conversation data.</RULE></REQUIREMENT>
-      <REQUIREMENT id="REQ32-MODEL" refs="REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ32-HISTORY"><RULE>Direct and group conversations share one conversation identity, message stream, authorization model and history semantics, with type-specific membership and ownership rules.</RULE></REQUIREMENT>
+    <REQUIREMENT id="REQ32-MODEL" refs="REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ32-HISTORY"><RULE>Direct and group conversations share one conversation identity, message stream, authorization model and history semantics, with type-specific membership and ownership rules.</RULE></REQUIREMENT>
     <REQUIREMENT id="REQ32-PRESERVE" refs="REQ32-DOCUMENT REQ32-API INV32-PRESERVE INV32-NO-LEGACY"><RULE>The target supports direct/group conversation behavior, authorization, membership intervals and revocation, full history, document metadata isolation, message ordering, read markers and idempotency. It contains no obsolete owner-scoped schema or tables, legacy SQL functions, or compatibility layer. Initialize a fresh target database without migrating legacy data; old clients are not supported.</RULE></REQUIREMENT>
 
     <FUNCTIONAL_REQUIREMENTS id="REQ32-FUNCTIONAL">
