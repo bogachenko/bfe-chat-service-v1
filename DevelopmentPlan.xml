@@ -97,7 +97,7 @@
       </MODULE>
       <MODULE id="DP36-M-REALTIME" refs="REQ32-REALTIME REQ32-MEMBERSHIP REQ36-WAKE-TOKEN TD36-TRANSPORT TD36-WEBPUSH TD36-PAYLOAD TD36-NTFY-ACL TD36-DELIVERY-FAILURE TECH36-INTEROP-CHECK">
         <RESPONSIBILITY>After message commit, determine currently eligible active conversation recipients excluding the sender; ensure a durable token mapping exists before publication; encrypt the minimal payload with the approved RFC 8291 aes128gcm flow; publish through ntfy and UnifiedPush only; handle delivery failure without rolling back message state.</RESPONSIBILITY>
-        <NON_RESPONSIBILITY>Does not include message/document content in the event, use Centrifuge or a parallel WebSocket transport, expose ntfy administrator credentials, or treat successful publication as proof of access.</NON_RESPONSIBILITY>
+        <NON_RESPONSIBILITY>Does not include message/document content in the event, add any alternate realtime transport, expose ntfy administrator credentials, or treat successful publication as proof of access.</NON_RESPONSIBILITY>
         <DELIVERY_POLICY>Use approved TD36-NTFY-ACL: the publisher has anonymous write-only access to up*; the ntfy Android distributor uses a regular non-admin account with read-only access to up*. Do not widen anonymous permissions. Recheck current recipient eligibility before initiating a publish; an event already in flight cannot be recalled, and subsequent token resolution must fail closed after revocation.</DELIVERY_POLICY>
       </MODULE>
       <MODULE id="DP36-M-ANDROID-PUSH" refs="TECH36-UP-ANDROID TECH36-NTFY-ANDROID TD36-ANDROID-NOTIFICATION REQ36-NOTIFICATION TD36-PAYLOAD">
