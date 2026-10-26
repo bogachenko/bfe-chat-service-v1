@@ -8,8 +8,18 @@
 <APPROVAL_PROVENANCE status="HISTORICAL_ONLY"><HISTORICAL_APPROVAL ref="APPROVAL25-DEVELOPMENT" commit="c6b2761e86c4f79c6cf19ade13a3b169695c2df9" />
 <HISTORICAL_APPROVAL ref="APPROVAL25-ARCH-REVISION" commit="117bda7c2175c59ebaade269ffd0e3d19b2ed42e" /></APPROVAL_PROVENANCE>
 
+  <HISTORICAL_REFERENCE_INDEX id="DP32-HISTORICAL-REFS" status="HISTORICAL_ONLY">
+    <HISTORICAL_NODE id="APPROVAL25-DEVELOPMENT" source="historical approval provenance">Retained reference only; not an active Issue #36 approval.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="APPROVAL25-ARCH-REVISION" source="historical approval provenance">Retained reference only; not an active Issue #36 approval.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="RA32-001" source="historical RequirementsAnalysis revision">Historical Issue #32 requirement graph identifier; not an active Issue #36 requirement.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="TECH32-001" source="historical Technology revision">Historical Issue #32 technology graph identifier; not an active Issue #36 technology decision.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="TD32-HTTP" source="historical Technology revision">Historical Issue #32 transport decision identifier only.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="TD32-SECURITY" source="historical Technology revision">Historical Issue #32 security decision identifier only.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="TD32-REUSE" source="historical Technology revision">Historical Issue #32 reuse decision identifier only.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="TD32-MIGRATION" source="historical Technology revision">Historical Issue #32 migration decision identifier only.</HISTORICAL_NODE>
+    <HISTORICAL_NODE id="TD32-DOMAIN" source="historical Technology revision">Historical Issue #32 domain decision identifier only.</HISTORICAL_NODE>
+  </HISTORICAL_REFERENCE_INDEX>
 
-  
   <ISSUE32_DEVELOPMENT_REVISION id="DP32-001" status="HISTORICAL_ONLY" historical_status="HUMAN_APPROVED" historical_approval="HUMAN_APPROVED" approval="HISTORICAL_ONLY" baseline="3ed6798ab6f64c50fc3c3dca1029ac94b44a7368" requirements_ref="RA32-001" technology_ref="TECH32-001">
     <SCOPE>Target delta to the Issue #25 direct/group architecture; historical legacy architecture and approval records are preserved as prior-scope evidence, not as target endpoints.</SCOPE>
     <MODULE id="DP32-M-TRANSPORT" refs="REQ32-API TD32-HTTP"><RESPONSIBILITY>One unversioned /conversations route tree to the existing conversation domain handlers; remove old route registrations only at approved cutover.</RESPONSIBILITY><NON_RESPONSIBILITY>No duplicate /v1 or /v2 handlers and no rewriting of working conversation logic.</NON_RESPONSIBILITY></MODULE>
@@ -194,11 +204,15 @@
         <TRANSITION id="DP36-ST-MEMBER-REMOVE" from="DP36-S-MEMBER-ACTIVE" to="DP36-S-MEMBER-REMOVED">Removal closes the current visibility interval and invalidates authorization for subsequent operations.</TRANSITION>
         <TRANSITION id="DP36-ST-MEMBER-REJOIN" from="DP36-S-MEMBER-REMOVED" to="DP36-S-MEMBER-REJOINED">Rejoin creates a new interval; it does not reopen the removed interval.</TRANSITION>
       </STATE_MODEL>
-      <STATE_MODEL id="DP36-S-TOKEN" refs="REQ36-WAKE-TOKEN INV36-WAKE-TOKEN">
-        <STATE id="DP36-S-TOKEN-MAPPED" name="MAPPED_REUSABLE">Token maps durably to one conversation and is reusable while an issued notification may still be processed.</STATE>
-        <STATE id="DP36-S-TOKEN-DENIED-CONTEXT" name="RESOLUTION_DENIED_FOR_CURRENT_CONTEXT">Mapping may still exist, but current identity, Chat state, membership or visibility checks deny this request without disclosing conversation identity.</STATE>
-        <TRANSITION id="DP36-ST-TOKEN-DENY" from="DP36-S-TOKEN-MAPPED" to="DP36-S-TOKEN-DENIED-CONTEXT">Invalid authentication, disabled Chat or revoked/insufficient membership causes denial; token is not consumed or globally invalidated.</TRANSITION>
-        <TRANSITION id="DP36-ST-TOKEN-RETRY" from="DP36-S-TOKEN-DENIED-CONTEXT" to="DP36-S-TOKEN-MAPPED">A later request may resolve only after authentication and current authorization pass; prior denial does not mutate the mapping.</TRANSITION>
+      <STATE_MODEL id="DP36-S-TOKEN-MAPPING" refs="REQ36-WAKE-TOKEN INV36-WAKE-TOKEN">
+        <STATE id="DP36-S-TOKEN-MAPPED" name="MAPPED_REUSABLE">Token maps durably to one conversation and is reusable while an issued notification may still be processed; request denials do not mutate this mapping.</STATE>
+      </STATE_MODEL>
+      <STATE_MODEL id="DP36-S-TOKEN-RESOLUTION" refs="REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE">
+        <STATE id="DP36-S-TOKEN-RESOLUTION-REQUESTED" name="RESOLUTION_REQUESTED">A single protected resolution request is awaiting identity, availability and current membership/visibility checks.</STATE>
+        <STATE id="DP36-S-TOKEN-RESOLUTION-ALLOWED" name="RESOLUTION_ALLOWED_FOR_THIS_REQUEST">This request passed all current checks; only this request may receive the resolved conversation reference.</STATE>
+        <STATE id="DP36-S-TOKEN-DENIED-CONTEXT" name="RESOLUTION_DENIED_FOR_THIS_REQUEST">This request failed a required check; no conversation identity or content is disclosed. The durable mapping remains unchanged.</STATE>
+        <TRANSITION id="DP36-ST-TOKEN-ALLOW" from="DP36-S-TOKEN-RESOLUTION-REQUESTED" to="DP36-S-TOKEN-RESOLUTION-ALLOWED">Resolve only when DPoP, Chat availability, membership and visibility all pass.</TRANSITION>
+        <TRANSITION id="DP36-ST-TOKEN-DENY" from="DP36-S-TOKEN-RESOLUTION-REQUESTED" to="DP36-S-TOKEN-DENIED-CONTEXT">Invalid authentication, disabled Chat, missing mapping or revoked/insufficient membership denies this request without consuming or invalidating the token.</TRANSITION>
       </STATE_MODEL>
       <STATE_MODEL id="DP36-S-MESSAGE-DELIVERY" refs="REQ32-MESSAGE REQ32-REALTIME TD36-DELIVERY-FAILURE">
         <STATE id="DP36-S-MESSAGE-COMMITTED" name="COMMITTED">Message and idempotency result are durable regardless of push outcome.</STATE>
@@ -211,11 +225,21 @@
       </STATE_MODEL>
       <STATE_MODEL id="DP36-S-IDEMPOTENCY" refs="REQ32-MESSAGE AC32-MESSAGE">
         <STATE id="DP36-S-IDEM-NEW" name="NEW_KEY">No prior committed result exists for this idempotency key and authenticated sender scope.</STATE>
-        <STATE id="DP36-S-IDEM-REPLAY" name="IDENTICAL_REPLAY">Identical content returns the original result and creates no duplicate logical message or notification.</STATE>
-        <STATE id="DP36-S-IDEM-CONFLICT" name="CONTENT_CONFLICT">Different content with the same key returns 409 Conflict and creates no new message or notification.</STATE>
-        <TRANSITION id="DP36-ST-IDEM-COMMIT" from="DP36-S-IDEM-NEW" to="DP36-S-MESSAGE-COMMITTED">A new valid request commits message and idempotency result atomically.</TRANSITION>
-        <TRANSITION id="DP36-ST-IDEM-REPLAY" from="DP36-S-IDEM-NEW" to="DP36-S-IDEM-REPLAY">Identical replay returns the original result without another logical notification.</TRANSITION>
-        <TRANSITION id="DP36-ST-IDEM-CONFLICT" from="DP36-S-IDEM-NEW" to="DP36-S-IDEM-CONFLICT">Different content is rejected with 409 Conflict and no additional side effect.</TRANSITION>
+        <STATE id="DP36-S-IDEM-STORED" name="COMMITTED_RESULT">A valid first request has atomically stored its message and idempotency result.</STATE>
+        <STATE id="DP36-S-IDEM-REPLAY" name="IDENTICAL_REPLAY">A repeated request with identical content returns the original result and creates no duplicate logical message or notification.</STATE>
+        <STATE id="DP36-S-IDEM-CONFLICT" name="CONTENT_CONFLICT">A repeated request with different content returns 409 Conflict and creates no new message or notification.</STATE>
+        <TRANSITION id="DP36-ST-IDEM-COMMIT" from="DP36-S-IDEM-NEW" to="DP36-S-IDEM-STORED">A new valid request commits message and idempotency result atomically.</TRANSITION>
+        <TRANSITION id="DP36-ST-IDEM-REPLAY" from="DP36-S-IDEM-STORED" to="DP36-S-IDEM-REPLAY">A subsequent request with identical content returns the original result without another logical notification.</TRANSITION>
+        <TRANSITION id="DP36-ST-IDEM-CONFLICT" from="DP36-S-IDEM-STORED" to="DP36-S-IDEM-CONFLICT">A subsequent request with different content is rejected with 409 Conflict and no additional side effect.</TRANSITION>
+      </STATE_MODEL>
+
+      <STATE_MODEL id="DP36-S-SUBSCRIPTION" refs="TD36-REGISTRATION REQ36-CHAT-STATE">
+        <STATE id="DP36-S-SUB-ABSENT" name="UNREGISTERED">No active push destination is stored for this account/device registration.</STATE>
+        <STATE id="DP36-S-SUB-ACTIVE" name="REGISTERED">A validated UnifiedPush endpoint and encryption material are stored as protected subscription data.</STATE>
+        <STATE id="DP36-S-SUB-REMOVED" name="REMOVED">The destination is no longer eligible for future delivery attempts.</STATE>
+        <TRANSITION id="DP36-ST-SUB-REGISTER" from="DP36-S-SUB-ABSENT" to="DP36-S-SUB-ACTIVE">Registration succeeds only after DPoP, Chat availability and endpoint-origin checks.</TRANSITION>
+        <TRANSITION id="DP36-ST-SUB-REPLACE" from="DP36-S-SUB-ACTIVE" to="DP36-S-SUB-ACTIVE">A validated replacement updates the protected destination data.</TRANSITION>
+        <TRANSITION id="DP36-ST-SUB-REMOVE" from="DP36-S-SUB-ACTIVE" to="DP36-S-SUB-REMOVED">Authorized removal disables future delivery attempts to this destination.</TRANSITION>
       </STATE_MODEL>
     </STATE_MODELS>
 
@@ -264,7 +288,7 @@
         <PATH>Do not initiate new publications after current membership recheck. An already in-flight opaque event cannot be recalled. Token resolution checks current membership and fails closed; history remains restricted to allowed visibility intervals.</PATH>
         <ACCESS_CHECKS>Require valid DPoP, enabled Chat, current membership and visibility on each token resolution and history request.</ACCESS_CHECKS>
         <SIDE_EFFECTS>No protected data is returned and no token mapping is consumed.</SIDE_EFFECTS>
-        <END_STATE ref="DP36-S-TOKEN-DENIED-CONTEXT">Old notification may exist, but cannot disclose conversation identity or content.</END_STATE>
+        <END_STATE ref="DP36-S-TOKEN-DENIED-CONTEXT">Old notification may exist, but this failed resolution request cannot disclose conversation identity or content; the token mapping remains reusable for separately authorized requests.</END_STATE>
       </FAILURE_PATH>
       <FAILURE_PATH id="DP36-ERR-INVALID-TOKEN" refs="REQ36-WAKE-TOKEN REQ36-NOTIFICATION INV36-WAKE-TOKEN">
         <TRIGGER>Token is malformed, unknown or has no durable mapping.</TRIGGER>
