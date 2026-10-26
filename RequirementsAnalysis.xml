@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service" status="PENDING_HUMAN_APPROVAL" effective_revision="RA36-002">
+<REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service" status="HUMAN_APPROVED" effective_revision="RA36-002">
 
   
   <REVISION_HISTORY id="RA36-REVISION-HISTORY" previous_approved_revision="RA36-001" current_revision="RA36-002">
     <REVISION id="RA36-REVISION-001" revision="RA36-001" status="HUMAN_APPROVED" commit_sha="3177b476dbd5c790dc1af72ca68d104b625472a7" blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15">Original approved RequirementsAnalysis baseline; the full historical content remains available in Git at the recorded commit and blob.</REVISION>
-    <REVISION id="RA36-REVISION-002" revision="RA36-002" status="PENDING_HUMAN_APPROVAL" based_on_revision="RA36-001" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" baseline_blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15">Clarifies document metadata availability in authorized message history and explicitly separates it from the minimal realtime wake payload.</REVISION>
+    <REVISION id="RA36-REVISION-002" revision="RA36-002" status="HUMAN_APPROVED" based_on_revision="RA36-001" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" baseline_blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15">Clarifies document metadata availability in authorized message history and explicitly separates it from the minimal realtime wake payload.</REVISION>
   </REVISION_HISTORY>
 
-  <REQUIREMENTS_GRAPH id="RA36-001" revision_id="RA36-002" status="PENDING_HUMAN_APPROVAL" previous_approved_revision="RA36-001" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" baseline_blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15">
+  <REQUIREMENTS_GRAPH id="RA36-001" revision_id="RA36-002" status="HUMAN_APPROVED" previous_approved_revision="RA36-001" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" baseline_blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15">
     <GOAL id="GOAL36-001">One unified direct/group conversation service whose sole conversation HTTP resource tree is /conversations. Realtime updates use minimal opaque wake events; protected message/history content is retrieved through the authenticated Chat API using BFE Drive Internal Auth and DPoP. Activating a system notification opens the corresponding conversation only after current authorization is verified.</GOAL>
     <REQUIREMENT id="REQ32-API" refs="REQ32-DIRECT REQ32-GROUP"><RULE>All target conversation HTTP operations use /conversations and its unversioned descendants. The target exposes no /v1 or /v2 conversation APIs.</RULE></REQUIREMENT>
     <REQUIREMENT id="REQ32-AUTH" refs="REQ32-ISOLATION REQ36-WAKE-TOKEN REQ36-CHAT-STATE"><RULE>Every protected Chat API request, including wakeToken resolution and history retrieval, requires a valid DPoP proof bound to the validated BFE Drive session through existing Internal Auth; plain Bearer is not accepted. Each request independently checks current Chat availability, authenticated identity, conversation membership and message visibility. Receiving a wake event or possessing a wakeToken is not authentication or authorization and never grants access to conversation data.</RULE></REQUIREMENT>
