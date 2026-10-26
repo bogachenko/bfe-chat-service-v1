@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service" status="HUMAN_APPROVED" effective_revision="RA36-002">
+<REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service" status="PENDING_HUMAN_APPROVAL" effective_revision="RA36-002">
 
   
   <REVISION_HISTORY id="RA36-REVISION-HISTORY" previous_approved_revision="RA36-001" current_revision="RA36-002">
