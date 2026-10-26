@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service">
+<REQUIREMENTS_ANALYSIS id="RA-BFE-CHAT-001" system="BFE Chat Service" status="HUMAN_APPROVED">
 
   
   <REQUIREMENTS_GRAPH id="RA36-001">
