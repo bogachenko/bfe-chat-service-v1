@@ -15,10 +15,10 @@
   module_contracts_revision="MC36-003"
   module_contracts_base_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b"
   module_contracts_baseline_blob_sha="27b4154b778c53267c860d3a36c5cfd96a4ab6aa"
-  module_contracts_blob_sha="8a6ba50def7459bd5a35a52b79c66533afffb8dc"
+  module_contracts_blob_sha="faf9e56fb776e9a351b38c0a27fe82ae3c593499"
   architecture_revision="DP36-005"
   architecture_base_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b"
-  architecture_blob_sha="ffa6409852e3184841d1f9d17a9c7560f2d5016b"
+  architecture_blob_sha="c6fbb74466057eaad6096600e3a8db1a891d837b"
   requirements_revision="RA36-003"
   requirements_blob_sha="42b7d22c400f7f0060ecad9031624155db0b5470"
   technology_revision="TECH36-004"
@@ -27,7 +27,7 @@
 
   <REVISION_HISTORY id="CFC36-REVISION-HISTORY" previous_revision="CFC36-003" current_revision="CFC36-004">
     <REVISION id="CFC36-REVISION-003" revision="CFC36-003" status="SUPERSEDED_PROPOSAL" baseline_blob_sha="d5a1928bbe54eee77a4287ef259cff1cd8cc1c6f" source_head_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b">Previous proposed class/function contract revision. Its runtime-switch contracts and former disabled-state response path are superseded by the Project Owner decision.</REVISION>
-    <REVISION id="CFC36-REVISION-004" revision="CFC36-004" status="PROPOSED" approval="PENDING" based_on_revision="CFC36-003" prepared_from_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b" baseline_blob_sha="d5a1928bbe54eee77a4287ef259cff1cd8cc1c6f" requirements_revision_id="RA36-003" requirements_blob_sha="42b7d22c400f7f0060ecad9031624155db0b5470" technology_revision_id="TECH36-004" technology_blob_sha="4f22b56522c125aed9a7ff008d8f2a9887372d69" architecture_revision_id="DP36-005" architecture_blob_sha="ffa6409852e3184841d1f9d17a9c7560f2d5016b" module_contracts_revision_id="MC36-003" module_contracts_blob_sha="8a6ba50def7459bd5a35a52b79c66533afffb8dc" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453888754" supersedes_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702">Removes the Chat runtime configuration type, runtime gate class/function, disabled-state error mapping, and subscription dependencies on a Chat-state switch. This revision remains PROPOSED/PENDING. Independent QA has not been started and Human Approval has not been granted.</REVISION>
+    <REVISION id="CFC36-REVISION-004" revision="CFC36-004" status="PROPOSED" approval="PENDING" based_on_revision="CFC36-003" prepared_from_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b" baseline_blob_sha="d5a1928bbe54eee77a4287ef259cff1cd8cc1c6f" requirements_revision_id="RA36-003" requirements_blob_sha="42b7d22c400f7f0060ecad9031624155db0b5470" technology_revision_id="TECH36-004" technology_blob_sha="4f22b56522c125aed9a7ff008d8f2a9887372d69" architecture_revision_id="DP36-005" architecture_blob_sha="c6fbb74466057eaad6096600e3a8db1a891d837b" module_contracts_revision_id="MC36-003" module_contracts_blob_sha="faf9e56fb776e9a351b38c0a27fe82ae3c593499" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453888754" supersedes_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702">Removes the Chat runtime configuration type, runtime gate class/function, disabled-state error mapping, and subscription dependencies on a Chat-state switch. This revision remains PROPOSED/PENDING. Independent QA has not been started and Human Approval has not been granted.</REVISION>
   </REVISION_HISTORY>
 
   <PURPOSE>Define proposed class and function contracts for Issue #36 from the pinned source-code audit and the synchronized proposed RA36-003, TECH36-004, DP36-005, and MC36-003 artifacts. These revisions remain PROPOSED/PENDING; this CFC revision does not claim Human Approval or runtime interoperability.</PURPOSE>
@@ -75,7 +75,7 @@
 
   <SUPPORTING_TYPES status="PROPOSED">
     <TYPE id="CFC36-T-CALLER-CONTEXT" name="CallerContext" signature="type CallerContext = authentication.Caller">Alias for the existing authenticated caller returned by Validator.ValidateCaller; AccountID is populated only by successful identity validation.</TYPE>
-    <TYPE id="CFC36-T-RUNTIME-DEPS" name="RuntimeDependencies" signature="type RuntimeDependencies struct { Identity *authentication.Validator; Availability AvailabilityChecker; Policy PolicyAuthorizer; Conversations ConversationOperations; Messages MessageOperations; History HistoryOperations; Subscriptions SubscriptionOperations; WakeTokens WakeTokenResolver; Realtime CommittedMessageNotifier }">Proposed dependency bundle for application composition. It contains no client-controlled identity or ntfy administrative credentials.</TYPE>
+    <TYPE id="CFC36-T-RUNTIME-DEPS" name="RuntimeDependencies" signature="type RuntimeDependencies struct { Identity *authentication.Validator; Policy PolicyAuthorizer; Conversations ConversationOperations; Messages MessageOperations; History HistoryOperations; Subscriptions SubscriptionOperations; WakeTokens WakeTokenResolver; Realtime CommittedMessageNotifier }">Proposed dependency bundle for application composition. It contains no client-controlled identity or ntfy administrative credentials.</TYPE>
     <TYPE id="CFC36-T-AUTH-INPUT" name="AuthorizationInput" signature="type AuthorizationInput struct { Caller CallerContext; Operation Operation; Conversation ConversationID; MessageOrdinal *int64; TargetAccount *AccountID }">Explicit operation-specific policy input; the caller is derived from the validated request, not request JSON.</TYPE>
     <TYPE id="CFC36-T-MEMBERSHIP-STATE" name="MembershipState" signature="type MembershipState struct { Role string; Active bool; VisibleFrom int64; VisibleThrough *int64 }">Current membership and bounded message-visibility interval used by policy and history.</TYPE>
     <TYPE id="CFC36-T-SEND-INPUT" name="SendMessageInput" signature="type SendMessageInput struct { Text string; IdempotencyKey string; DocumentID *string; DocumentTitle *string }">Client message fields only. Sender and conversation authorization are derived from validated context and route/service arguments.</TYPE>
@@ -90,8 +90,6 @@
     <TYPE id="CFC36-T-DELIVERY-JOB" name="DeliveryJob" signature="type DeliveryJob struct { ID string; Event CommittedMessage; Recipient AccountID; SubscriptionID SubscriptionID }">One durable per-subscription outbox intent. The worker claims it before network I/O, rechecks current recipient and subscription eligibility and records one terminal outcome. A claimed attempt is never automatically retried.</TYPE>
     <TYPE id="CFC36-T-NTFY-RUNTIME-CONFIG" name="NtfyRuntimeConfig" signature="type NtfyRuntimeConfig struct { Origin *url.URL; HTTPTimeout time.Duration }">Validated trusted configuration populated from required -ntfy-origin and -ntfy-timeout, which defaults to 5s. Origin is independent of -public-origin; timeout must be positive.</TYPE>
         <TYPE id="CFC36-T-ERROR-CODE" name="ErrorCode" signature="type ErrorCode string">Public error codes and HTTP statuses are defined by DP36-HTTP-ERROR-MAPPING: AUTH_INVALID/401, AUTH_UNAVAILABLE/503, VALIDATION_ERROR/400, FORBIDDEN/403, NOT_FOUND/404, CONFLICT_409/409, METHOD_NOT_ALLOWED/405, STORAGE_UNAVAILABLE/503, INTERNAL_ERROR/500.</TYPE>
-
-    <INTERFACE id="CFC36-I-AVAILABILITY-CHECKER" name="AvailabilityChecker" signature="type AvailabilityChecker interface { RequireEnabled(ctx context.Context) error }"/>
 
     <INTERFACE id="CFC36-I-POLICY-AUTHORIZER" name="PolicyAuthorizer" signature="type PolicyAuthorizer interface { Authorize(ctx context.Context, in AuthorizationInput) error }"/>
     <INTERFACE id="CFC36-I-CONVERSATION-POLICY-READER" name="ConversationPolicyReader" signature="type ConversationPolicyReader interface { CurrentMembership(ctx context.Context, conversation ConversationID, account AccountID) (MembershipState, error); MessageVisible(ctx context.Context, conversation ConversationID, account AccountID, ordinal int64) (bool, error) }"/>
@@ -108,8 +106,8 @@
     <INTERFACE id="CFC36-I-WAKETOKEN-REPOSITORY" name="WakeTokenRepository" signature="type WakeTokenRepository interface { SaveWakeToken(ctx context.Context, token WakeToken, conversation ConversationID) error; ResolveWakeToken(ctx context.Context, token WakeToken) (ConversationID, error) }"/>
     <INTERFACE id="CFC36-I-REALTIME-REPOSITORY" name="RealtimeRepository" signature="type RealtimeRepository interface { ClaimNextDelivery(ctx context.Context) (DeliveryJob, bool, error); MarkInterruptedDeliveriesUnknown(ctx context.Context) error; EligibleRecipients(ctx context.Context, conversation ConversationID, exclude AccountID) ([]Recipient, error); RecordDeliveryOutcome(ctx context.Context, deliveryID string, outcome string) error }">ClaimNextDelivery atomically claims one pending per-subscription outbox intent. EligibleRecipients returns one target per current account-owned subscription for eligible recipient accounts, excluding every subscription owned by the sender. MarkInterruptedDeliveriesUnknown terminalizes previously claimed attempts that did not record a conclusive result. Delivery outcomes are terminal and are not retried automatically.</INTERFACE>
     <INTERFACE id="CFC36-I-CONVERSATION-TX" name="ConversationTx" signature="type ConversationTx interface { LockConversation(ctx context.Context) error; RequireConversationKind(ctx context.Context, kind string) error; RequireActiveMember(ctx context.Context, account AccountID) (MembershipState, error); RequireRole(ctx context.Context, account AccountID, role string) error; AddMember(ctx context.Context, account AccountID, role string) error; RemoveMember(ctx context.Context, account AccountID) error; SetMemberRole(ctx context.Context, account AccountID, role string) error; TransferOwner(ctx context.Context, successor AccountID) error; RenameGroup(ctx context.Context, name string) error; SetDirectHidden(ctx context.Context, viewer AccountID, hidden bool) error; InsertMessage(ctx context.Context, message NewMessage) (StoredMessage, error); SaveIdempotencyResult(ctx context.Context, key IdempotencyKey, result StoredMessage) error; ActiveRecipients(ctx context.Context, exclude AccountID) ([]Recipient, error); AdvanceReadMarker(ctx context.Context, account AccountID, ordinal int64) (int64, error) }"/>
-    <INTERFACE id="CFC36-I-ROUTE-SUBSCRIPTION" name="Subscription route boundary" status="PROPOSED_PENDING_ROUTE_APPROVAL">Proposed POST /conversations/push-subscriptions, PUT /conversations/push-subscriptions/{subscriptionId}, and DELETE /conversations/push-subscriptions/{subscriptionId}, with schemas in DP36-PUBLIC-HTTP-CONTRACTS. All require session-bound DPoP, Chat enabled and ownership scoped to authenticated AccountID. Keep OPEN-002 blocked until the Project Owner explicitly approves the exact routes and schemas.</INTERFACE>
-    <INTERFACE id="CFC36-I-ROUTE-WAKETOKEN" name="WakeToken resolution route boundary" status="UNRESOLVED">A protected route must authenticate the current DPoP-bound session, check availability and current policy, resolve the opaque token, and return no protected data on failure. HTTP method, path and JSON schema are not specified by the approved upstream sources.</INTERFACE>
+    <INTERFACE id="CFC36-I-ROUTE-SUBSCRIPTION" name="Subscription route boundary" status="PROPOSED_PENDING_ROUTE_APPROVAL">Proposed POST /conversations/push-subscriptions, PUT /conversations/push-subscriptions/{subscriptionId}, and DELETE /conversations/push-subscriptions/{subscriptionId}, with schemas in DP36-PUBLIC-HTTP-CONTRACTS. All require session-bound DPoP and ownership scoped to authenticated AccountID. Keep OPEN-002 blocked until the Project Owner explicitly approves the exact routes and schemas.</INTERFACE>
+    <INTERFACE id="CFC36-I-ROUTE-WAKETOKEN" name="WakeToken resolution route boundary" status="UNRESOLVED">A protected route must authenticate the current DPoP-bound session, check current authorization, resolve the opaque token, and return no protected data on failure. Dependency failures follow the public error contract. HTTP method, path and JSON schema are not specified by the approved upstream sources.</INTERFACE>
   </SUPPORTING_TYPES>
 
   <INTERFACE id="CFC36-I-WEBPUSH-ENCRYPTOR" name="WebPushEncryptor" signature="type WebPushEncryptor interface { Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error) }">Encryption boundary for the exact approved wake payload; no plaintext or secrets are logged.</INTERFACE>
@@ -134,7 +132,7 @@
       <BUSINESS_RULES>Validate request shape and documented limits before side effects; use only the approved unversioned resource tree. Apply the common public error-code/status table in DP36-HTTP-ERROR-MAPPING.</BUSINESS_RULES>
       <TEST_PROPERTIES>Rejected requests have no protected mutation; errors reveal no conversation, message, token or endpoint secrets.</TEST_PROPERTIES>
       <SIDE_EFFECTS>Validate and dispatch the request and write the HTTP response; no direct persistence or network publication.</SIDE_EFFECTS>
-      <FAILURE_BEHAVIOR>Map validation, authentication, availability, authorization, conflict and internal errors without exposing protected values.</FAILURE_BEHAVIOR>
+      <FAILURE_BEHAVIOR>Map validation, authentication, authorization, dependency, conflict and internal errors without exposing protected values.</FAILURE_BEHAVIOR>
 
       <TRACE refs="MC36-HTTP MC36-IDENTITY MC36-POLICY DP36-F01 DP36-F05 DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-ERROR-MAPPING REQ32-API REQ32-AUTH REQ32-LIMITS INV32-ONE-API MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
     </CLASS_CONTRACT>
@@ -166,20 +164,20 @@
     <CLASS_CONTRACT id="CC36-POLICY" name="PolicyService" module_ref="MC36-POLICY" status="PROPOSED_NEW">
       <PROPOSED_SIGNATURE>type PolicyService struct { Conversations ConversationPolicyReader }</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s PolicyService) Authorize(ctx context.Context, in AuthorizationInput) error</PROPOSED_SIGNATURE>
-      <RESPONSIBILITY>Evaluate current availability, authenticated identity, membership, role, membership visibility interval and per-message visibility for each protected operation.</RESPONSIBILITY>
+      <RESPONSIBILITY>Evaluate authenticated identity, membership, role, membership visibility interval and per-message visibility for each protected operation.</RESPONSIBILITY>
       <PRECONDITION>Caller identity was validated for this request; operation and resource identifiers are parsed; current state can be read.</PRECONDITION>
       <POSTCONDITION>Return success only when all current conditions for the requested operation are satisfied. Re-evaluate on every request; do not cache authorization as a substitute for current checks.</POSTCONDITION>
       <FORBIDDEN>Grant access based only on account UUID, BFE Drive admin status, notification receipt, Endpoint capability possession or wakeToken possession.</FORBIDDEN>
       <INTENT>Make current operation-specific authorization decisions for Chat resources.</INTENT>
-      <INPUTS>Validated caller context, operation/resource context, current availability and authoritative membership/visibility state.</INPUTS>
+      <INPUTS>Validated caller context, operation/resource context, and authoritative membership/visibility state.</INPUTS>
       <OUTPUTS>Allow or non-disclosing denial for the requested operation.</OUTPUTS>
       <STATE_CHANGES>None.</STATE_CHANGES>
       <INVARIANTS>No cached decision substitutes for current authorization; token or push possession grants no access.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not authenticate the session, mutate domain state or publish notifications.</NON_RESPONSIBILITIES>
       <BUSINESS_RULES>Apply role and visibility-interval rules to every protected operation, including history and wakeToken resolution.</BUSINESS_RULES>
       <TEST_PROPERTIES>Revocation, disabled state, insufficient role and out-of-interval messages are denied without protected data.</TEST_PROPERTIES>
-      <SIDE_EFFECTS>Read availability, membership, role and visibility state only.</SIDE_EFFECTS>
-      <FAILURE_BEHAVIOR>Fail closed if identity, availability, membership, role or visibility cannot be established.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read membership, role and visibility state only.</SIDE_EFFECTS>
+      <FAILURE_BEHAVIOR>Fail closed if identity, membership, role or visibility cannot be established; map dependency failures through the public error contract.</FAILURE_BEHAVIOR>
 
       <TRACE refs="MC36-POLICY MC36-CONVERSATION DP36-D04 DP36-F01 DP36-F03 DP36-F05 DP36-F06 DP36-F07 DP36-F08 REQ32-AUTH REQ32-MEMBERSHIP REQ32-HISTORY REQ32-ROLES REQ36-WAKE-TOKEN REQ36-CHAT-STATE INV32-DPOP INV36-WAKE-TOKEN MC36-I-F01 MC36-I-F03 MC36-I-F05 MC36-I-F06 MC36-I-F07 MC36-I-F08"/>
     </CLASS_CONTRACT>
@@ -281,7 +279,7 @@
     </CLASS_CONTRACT>
 
     <CLASS_CONTRACT id="CC36-SUBSCRIPTION" name="SubscriptionService" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW">
-      <PROPOSED_SIGNATURE>type SubscriptionService struct { Availability AvailabilityChecker; EndpointValidator PushEndpointValidator; ConfiguredOrigin *url.URL; Repository SubscriptionRepository }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type SubscriptionService struct { EndpointValidator PushEndpointValidator; ConfiguredOrigin *url.URL; Repository SubscriptionRepository }</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) (SubscriptionID, error)</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID, input PushSubscription) error</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID) error</PROPOSED_SIGNATURE>
@@ -295,7 +293,7 @@
       <STATE_CHANGES>Create, replace or remove only the selected subscription record owned by the authenticated AccountID.</STATE_CHANGES>
       <INVARIANTS>Each record is owned by AccountID and identified by SubscriptionID; accounts have no subscription-count limit. SubscriptionID is not a device identifier or authorization capability. Endpoint is stored as the complete returned URL; no separate Topic is accepted or persisted; only the configured HTTPS ntfy origin and pinned Endpoint format are accepted.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not create membership, grant history access, widen ntfy ACL or expose admin credentials.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Authenticate with session-bound DPoP, require Chat enabled, derive AccountID from the validated session and scope replace/remove to that account's SubscriptionID. Preserve the full Endpoint unchanged. Do not accept, store or derive a separate Topic, DeviceID or device-specific policy.</BUSINESS_RULES>
+      <BUSINESS_RULES>Authenticate with session-bound DPoP, derive AccountID from the validated session and scope replace/remove to that account's SubscriptionID. Preserve the full Endpoint unchanged. Do not accept, store or derive a separate Topic, DeviceID or device-specific policy.</BUSINESS_RULES>
       <TEST_PROPERTIES>Verify multiple records per AccountID, registration returns only SubscriptionID, invalid Endpoint causes no write, failed replacement preserves the prior record, and cross-account replace/remove cannot mutate or disclose another account's record.</TEST_PROPERTIES>
       <SIDE_EFFECTS>Protected subscription-record persistence only.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Invalid Endpoint or storage failure produces no partial write; failed replacement preserves the previous valid record; unknown or cross-account subscription IDs return a non-disclosing NOT_FOUND result.</FAILURE_BEHAVIOR>
@@ -337,13 +335,13 @@
       <STATE_CHANGES>Token mapping on issuance; no state change on resolution.</STATE_CHANGES>
       <INVARIANTS>Mapping is durable before publication, resolution is repeatable/non-consuming, and no arbitrary fixed TTL is imposed.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not authorize based on token possession or disclose conversation identity on failure.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Each protected resolution rechecks current identity, availability, membership and visibility.</BUSINESS_RULES>
+      <BUSINESS_RULES>Each protected resolution rechecks current identity, membership and visibility.</BUSINESS_RULES>
       <TEST_PROPERTIES>Repeated resolution, removed membership, invalid authentication and persistence failure preserve non-disclosure and durability.</TEST_PROPERTIES>
       <SIDE_EFFECTS>Cryptographic randomness and persistence write on issue; read-only mapping lookup on resolve.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Do not return a token when mapping persistence fails; normalize resolution failure without revealing existence.</FAILURE_BEHAVIOR>
 
       <TRACE refs="MC36-WAKETOKEN MC36-PERSISTENCE MC36-POLICY DP36-F02 DP36-F05 DP36-F07 DP36-F08 DP36-D12 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN DP36-TX-TOKEN MC36-I-F02 MC36-I-F05 MC36-I-F07 MC36-I-F08"/>
-      <DECISION_NOTE>The exact protected HTTP route that invokes Resolve is intentionally unspecified here. The handler must require current DPoP, availability and policy checks and must normalize failed-resolution responses to avoid token-existence disclosure.</DECISION_NOTE>
+      <DECISION_NOTE>The exact protected HTTP route that invokes Resolve is intentionally unspecified here. The handler must require current DPoP and policy checks and must normalize failed-resolution responses to avoid token-existence disclosure. Dependency failures follow the public error contract.</DECISION_NOTE>
     </CLASS_CONTRACT>
 
     <CLASS_CONTRACT id="CC36-REALTIME" name="RealtimeWakeService" module_ref="MC36-REALTIME" status="PROPOSED_NEW">
@@ -393,7 +391,7 @@
       <RESPONSIBILITY>On activation, submit wakeToken through the protected Chat API using the current session-bound DPoP context; navigate only after successful server resolution, then fetch authorized cursor-based history.</RESPONSIBILITY>
       <PRECONDITION>Notification internal state contains protocol version and wakeToken only; current session context is available.</PRECONDITION>
       <POSTCONDITION>No conversation navigation or protected history request occurs before successful token resolution. Revoked membership, invalid token and visibility failures fail closed without protected disclosure.</POSTCONDITION>
-      <FORBIDDEN>Trust notification-carried conversation identifiers; locally resolve token; bypass current DPoP, availability or authorization checks.</FORBIDDEN>
+      <FORBIDDEN>Trust notification-carried conversation identifiers; locally resolve token; bypass current DPoP or authorization checks.</FORBIDDEN>
       <INTENT>Resolve a notification token through the protected Chat API before navigating or fetching history.</INTENT>
       <INPUTS>Internal notification state containing protocol version and wakeToken plus the current client session.</INPUTS>
       <OUTPUTS>Authorized conversation navigation followed by history request, or non-disclosing failure.</OUTPUTS>
@@ -420,7 +418,7 @@
       <SIDE_EFFECTS>Composition only; no conversation writes, token issuance or notification publication.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Return an error if required configuration or dependencies are invalid; do not start a partially wired service.</FAILURE_BEHAVIOR>
       <INTENT>Compose the protected Chat API without introducing a second or versioned conversation API.</INTENT>
-      <RESPONSIBILITY>Compose the HTTP resource tree and inject identity, configuration-backed availability, policy, conversation, message, history, subscription, wakeToken, persistence and realtime dependencies.</RESPONSIBILITY>
+      <RESPONSIBILITY>Compose the HTTP resource tree and inject identity, policy, conversation, message, history, subscription, wakeToken, persistence and realtime dependencies.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Does not implement request authorization, domain mutations, token issuance or notification publication.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>None during composition.</STATE_CHANGES>
       <INVARIANTS>Only the unversioned /conversations tree is exposed; Centrifuge and WebSocket are not wired as the Issue 36 realtime transport. Public errors follow DP36-HTTP-ERROR-MAPPING.</INVARIANTS>
@@ -432,7 +430,7 @@
     <FUNCTION_CONTRACT id="FC36-HTTP-ENTRY" name="HTTPHandler.ServeHTTP" module_ref="MC36-HTTP" status="PROPOSED_REUSE_CANDIDATE" signature="func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)" source="internal/issue25/http.go">
       <INPUTS>HTTP request, response writer and injected service dependencies.</INPUTS><OUTPUTS>One HTTP response carrying the successful operation result or a mapped non-disclosing error.</OUTPUTS>
       <PRECONDITIONS>Request is received under the single unversioned /conversations tree; request shape and size can be validated before side effects.</PRECONDITIONS>
-      <POSTCONDITIONS>Dispatch only to the responsible service after authentication and availability checks; no protected mutation occurs on rejected input or failed authorization.</POSTCONDITIONS>
+      <POSTCONDITIONS>Dispatch only to the responsible service after authentication and authorization checks; no protected mutation occurs on rejected input or failed authorization.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Map errors through DP36-HTTP-ERROR-MAPPING: AUTH_INVALID/401, AUTH_UNAVAILABLE/503, VALIDATION_ERROR/400, FORBIDDEN/403, NOT_FOUND/404, CONFLICT_409/409, METHOD_NOT_ALLOWED/405, STORAGE_UNAVAILABLE/503 and INTERNAL_ERROR/500. Never disclose protected values.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>HTTP response only; service calls may have effects only after all required gates pass.</SIDE_EFFECTS>
       <INTENT>Dispatch one protected request through the approved Chat API boundary.</INTENT>
@@ -475,12 +473,12 @@
       <FAILURE_BEHAVIOR>Fail closed on missing membership, stale visibility, denied role or unavailable policy dependencies.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Read policy and conversation state only.</SIDE_EFFECTS>
       <INTENT>Authorize one operation against current Chat state.</INTENT>
-      <RESPONSIBILITY>Evaluate caller, availability, current membership, role and applicable visibility.</RESPONSIBILITY>
+      <RESPONSIBILITY>Evaluate caller identity, current membership, role and applicable visibility.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Do not authenticate the caller, mutate state or use push/token possession as authorization.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>Every decision uses current state; membership visibility boundaries apply to each operation.</INVARIANTS>
       <TEST_PROPERTIES>Verify revoked membership, insufficient role and hidden-gap ordinal deny access.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Authorization uses current identity, availability, membership, role and visibility; token or push possession grants no access.</BUSINESS_RULES>
+      <BUSINESS_RULES>Authorization uses current identity, membership, role and visibility; token or push possession grants no access.</BUSINESS_RULES>
 
 
       <TRACE refs="MC36-POLICY MC36-CONVERSATION DP36-D04 DP36-F01 DP36-F03 DP36-F05 DP36-F06 DP36-F07 DP36-F08 REQ32-AUTH REQ32-MEMBERSHIP REQ32-ROLES REQ32-HISTORY REQ36-WAKE-TOKEN REQ36-CHAT-STATE MC36-I-F01 MC36-I-F03 MC36-I-F05 MC36-I-F06 MC36-I-F07 MC36-I-F08 DP36-ERR-REVOKED-MEMBER DP36-ERR-STALE-AUTH"/>
@@ -662,7 +660,7 @@
     </FUNCTION_CONTRACT>
     <FUNCTION_CONTRACT id="FC36-MESSAGE-SEND" name="MessageService.Send" module_ref="MC36-MESSAGE" status="PROPOSED_NEW" signature="func (s MessageService) Send(ctx context.Context, caller CallerContext, conversation ConversationID, input SendMessageInput) (StoredMessage, error)">
       <INPUTS>Validated caller context, conversation identifier, message payload, optional document ID/title metadata and idempotency key.</INPUTS><OUTPUTS>Committed message and its stable conversation-scoped ordinal.</OUTPUTS>
-      <PRECONDITIONS>Caller identity, availability and current membership are validated; text is at most 16384 UTF-8 bytes; JSON request is at most 65536 bytes.</PRECONDITIONS>
+      <PRECONDITIONS>Caller identity and current membership are validated; text is at most 16384 UTF-8 bytes; JSON request is at most 65536 bytes.</PRECONDITIONS>
       <POSTCONDITIONS>Message, monotonic ordinal, idempotency outcome and one durable delivery-outbox intent per eligible account-owned subscription commit atomically. Identical replay returns the prior result and creates no new intent; differing replay conflicts.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>No partial message on validation/transaction failure. Delivery failure or UNKNOWN never rolls back committed history and does not change the successful result for a committed message; outcome is recorded separately.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>One database transaction followed by a non-blocking worker wake signal; no network I/O on the request path.</SIDE_EFFECTS>
@@ -730,7 +728,7 @@
     </FUNCTION_CONTRACT>
     <FUNCTION_CONTRACT id="FC36-HISTORY-PAGE" name="HistoryReadService.ReadPage" module_ref="MC36-HISTORY-READ" status="PROPOSED_NEW" signature="func (s HistoryReadService) ReadPage(ctx context.Context, caller CallerContext, conversation ConversationID, after int64, limit int) (HistoryPage, error)">
       <INPUTS>Authenticated caller context, conversation identifier, cursor and requested page size.</INPUTS><OUTPUTS>Cursor-paginated visible messages and next cursor.</OUTPUTS>
-      <PRECONDITIONS>Chat enabled; current membership and visibility policy checked; default limit 50 and maximum 100.</PRECONDITIONS>
+      <PRECONDITIONS>Caller identity and current membership and visibility policy are checked; default limit 50 and maximum 100.</PRECONDITIONS>
       <POSTCONDITIONS>Stable conversation order and visibility-interval filtering apply to every page; document ID/title appear only on visible stored messages; no document content is returned.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Reject invalid limits and unauthorized access without returning protected rows.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Read-only query.</SIDE_EFFECTS>
@@ -888,7 +886,7 @@
 
     <FUNCTION_CONTRACT id="FC36-WAKETOKEN-RESOLVE" name="WakeTokenService.Resolve" module_ref="MC36-WAKETOKEN" status="PROPOSED_NEW" signature="func (s WakeTokenService) Resolve(ctx context.Context, token WakeToken) (ConversationID, error)">
       <INPUTS>Opaque token submitted through the protected API.</INPUTS><OUTPUTS>Conversation identifier after mapping lookup, or normalized failure.</OUTPUTS>
-      <PRECONDITIONS>Caller has authenticated and the availability and policy gates are executed by the protected API orchestration before protected data is returned.</PRECONDITIONS>
+      <PRECONDITIONS>Caller has authenticated and current authorization is evaluated by the protected API orchestration before protected data is returned.</PRECONDITIONS>
       <POSTCONDITIONS>Lookup is repeatable and non-consuming. This method does not authorize access; caller policy must recheck current membership/visibility after resolution.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Externally normalize invalid, missing and unauthorized token outcomes so they do not reveal token existence or conversation identity.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Read mapping only.</SIDE_EFFECTS>
@@ -896,9 +894,9 @@
       <RESPONSIBILITY>Perform a repeatable read-only mapping lookup for the protected API.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Do not consume the token, authorize membership or disclose existence on failure.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
-      <INVARIANTS>Every API resolution independently checks availability, identity, membership and visibility.</INVARIANTS>
+      <INVARIANTS>Every API resolution independently checks identity, membership and visibility.</INVARIANTS>
       <TEST_PROPERTIES>Verify repeated resolution works and revoked/disabled access fails without disclosure.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Resolution is repeatable and non-consuming; each protected request rechecks identity, availability, membership and visibility.</BUSINESS_RULES>
+      <BUSINESS_RULES>Resolution is repeatable and non-consuming; each protected request rechecks identity, membership and visibility.</BUSINESS_RULES>
 
 
       <TRACE refs="MC36-WAKETOKEN MC36-POLICY DP36-D12 DP36-F05 DP36-F07 DP36-F08 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN MC36-I-F05 MC36-I-F07 MC36-I-F08 DP36-ERR-INVALID-TOKEN DP36-ERR-REVOKED-MEMBER DP36-TX-TOKEN DP36-ERR-STALE-AUTH DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-ERROR-MAPPING DP36-HTTP-ERR-NOT-FOUND"/>

@@ -198,18 +198,18 @@
     "subscriptionId": {"type": "string", "minLength": 1}
   }
 }]]></SUCCESS_RESPONSE>
-        <AUTHORIZATION>Derive AccountID only from the validated DPoP-bound session. Require Chat enabled and validate the full Endpoint against the configured ntfy origin and pinned format before persistence. Return the opaque subscription record ID only; never return Endpoint or encryption material.</AUTHORIZATION>
+        <AUTHORIZATION>Derive AccountID only from the validated DPoP-bound session. Validate the full Endpoint against the configured ntfy origin and pinned format before persistence. Return the opaque subscription record ID only; never return Endpoint or encryption material.</AUTHORIZATION>
       </ROUTE>
       <ROUTE id="DP36-HTTP-SUBSCRIPTION-REPLACE" method="PUT" path="/conversations/push-subscriptions/{subscriptionId}" status="PROPOSED_PENDING_ROUTE_APPROVAL" authentication="session-bound DPoP" availability="required">
         <PATH_PARAMETER name="subscriptionId" type="string" semantics="opaque subscription-record ID; not a device ID or authorization credential"/>
         <REQUEST_SCHEMA ref="DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA" media_type="application/json">Same request schema as DP36-HTTP-SUBSCRIPTION-REGISTER: endpoint and keys.p256dh/auth only.</REQUEST_SCHEMA>
         <SUCCESS_RESPONSE status="204" media_type="none">No response body.</SUCCESS_RESPONSE>
-        <AUTHORIZATION>Require DPoP, Chat enabled, and a subscription record whose owner is the authenticated AccountID. Validate the replacement Endpoint and keys before an atomic replacement. Do not disclose whether a subscription ID belongs to another account.</AUTHORIZATION>
+        <AUTHORIZATION>Require DPoP and a subscription record whose owner is the authenticated AccountID. Validate the replacement Endpoint and keys before an atomic replacement. Do not disclose whether a subscription ID belongs to another account.</AUTHORIZATION>
       </ROUTE>
       <ROUTE id="DP36-HTTP-SUBSCRIPTION-REMOVE" method="DELETE" path="/conversations/push-subscriptions/{subscriptionId}" status="PROPOSED_PENDING_ROUTE_APPROVAL" authentication="session-bound DPoP" availability="required">
         <PATH_PARAMETER name="subscriptionId" type="string" semantics="opaque subscription-record ID; not a device ID or authorization credential"/>
         <SUCCESS_RESPONSE status="204" media_type="none">No response body.</SUCCESS_RESPONSE>
-        <AUTHORIZATION>Require DPoP, Chat enabled, and a subscription record whose owner is the authenticated AccountID. Delete only that record; do not disclose whether a subscription ID belongs to another account.</AUTHORIZATION>
+        <AUTHORIZATION>Require DPoP and a subscription record whose owner is the authenticated AccountID. Delete only that record; do not disclose whether a subscription ID belongs to another account.</AUTHORIZATION>
       </ROUTE>
       <HTTP_ERROR_MAPPING id="DP36-HTTP-ERROR-MAPPING" status="PROJECT_OWNER_DECISION_RECORDED">
         <ERROR id="DP36-HTTP-ERR-AUTH-INVALID" code="AUTH_INVALID" http_status="401"/>
@@ -398,7 +398,7 @@
       <FAILURE_PATH id="DP36-ERR-REVOKED-MEMBER" refs="REQ32-MEMBERSHIP REQ36-WAKE-TOKEN INV36-WAKE-TOKEN" public_error_code="NOT_FOUND" http_status="404">
         <TRIGGER>A notification was issued before recipient membership was removed, then the old event or token is activated.</TRIGGER>
         <PATH>Do not initiate new publications after current membership recheck. An already in-flight opaque event cannot be recalled. Token resolution checks current membership and fails closed; history remains restricted to allowed visibility intervals.</PATH>
-        <ACCESS_CHECKS>Require valid DPoP, enabled Chat, current membership and visibility on each token resolution and history request.</ACCESS_CHECKS>
+        <ACCESS_CHECKS>Require valid DPoP and current membership and visibility on each token resolution and history request.</ACCESS_CHECKS>
         <SIDE_EFFECTS>No protected data is returned and no token mapping is consumed.</SIDE_EFFECTS>
         <END_STATE ref="DP36-S-TOKEN-DENIED-CONTEXT">Old notification may exist, but this failed resolution request cannot disclose conversation identity or content; the token mapping remains reusable for separately authorized requests.</END_STATE>
       </FAILURE_PATH>
@@ -418,7 +418,7 @@
       <FAILURE_PATH id="DP36-ERR-INVALID-ENDPOINT" refs="TD36-ENDPOINT-SECURITY TD36-REGISTRATION DP36-HTTP-ERR-VALIDATION" public_error_code="VALIDATION_ERROR" http_status="400">
         <TRIGGER>A subscription contains a non-HTTPS endpoint, unexpected origin, arbitrary host, redirect or invalid scheme.</TRIGGER>
         <PATH>Reject before persisting or using the endpoint; only the configured ntfy origin is allowed.</PATH>
-        <ACCESS_CHECKS>Registration still requires valid DPoP and enabled Chat.</ACCESS_CHECKS>
+        <ACCESS_CHECKS>Registration requires valid DPoP; register/replace additionally validate the Endpoint and subscription ownership rules.</ACCESS_CHECKS>
         <SIDE_EFFECTS>No outbound request to the untrusted endpoint and no persistence of the rejected endpoint.</SIDE_EFFECTS>
       </FAILURE_PATH>
       <FAILURE_PATH id="DP36-ERR-STALE-AUTH" refs="REQ32-AUTH REQ36-NOTIFICATION INV32-DPOP DP36-HTTP-ERR-AUTH-INVALID" public_error_code="AUTH_INVALID" http_status="401">
