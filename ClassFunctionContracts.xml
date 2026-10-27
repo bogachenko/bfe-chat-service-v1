@@ -207,7 +207,7 @@
       <TRACE refs="MC36-POLICY MC36-CONVERSATION MC36-AVAILABILITY DP36-D04 DP36-F01 DP36-F03 DP36-F05 DP36-F06 DP36-F07 DP36-F08 REQ32-AUTH REQ32-MEMBERSHIP REQ32-HISTORY REQ32-ROLES REQ36-WAKE-TOKEN REQ36-CHAT-STATE INV32-DPOP INV36-WAKE-TOKEN"/>
     </CLASS_CONTRACT>
 
-    <CLASS_CONTRACT id="CC36-CONVERSATION" name="ConversationService / conversation repository boundary" module_ref="MC36-CONVERSATION" status="PROPOSED_REUSE_OR_REPLACEMENT">
+    <CLASS_CONTRACT id="CC36-CONVERSATION" name="ConversationService" module_ref="MC36-CONVERSATION" status="PROPOSED_REUSE_OR_REPLACEMENT">
       <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) OpenDirect(ctx context.Context, a, b string) (string, error)"/>
       <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) CreateGroup(ctx context.Context, owner, name string, members []string) (string, error)"/>
       <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) Join(ctx context.Context, conversation, actor, target, role string) (string, error)"/>
@@ -288,7 +288,7 @@
       <PROPOSED_SIGNATURE>type ConversationRepository interface { OpenDirect(ctx context.Context, first AccountID, second AccountID) (ConversationID, error); CreateGroup(ctx context.Context, owner AccountID, name string, members []AccountID) (ConversationID, error); WithConversationTx(ctx context.Context, conversation ConversationID, fn func(ConversationTx) error) error }</PROPOSED_SIGNATURE>
       <RESPONSIBILITY>Expose the conversation identity and transaction boundary used by the conversation domain. The separately declared MessageRepository, HistoryRepository, SubscriptionRepository, WakeTokenRepository and RealtimeRepository interfaces own their corresponding persistence operations.</RESPONSIBILITY>
       <PRECONDITION>All calls use the approved PostgreSQL 18.4 / pgx v5 persistence boundary; transaction callbacks do not perform external network I/O.</PRECONDITION>
-      <POSTCONDITION>Membership changes, message ordering, message/idempotency persistence and visibility boundaries are atomic as required by DP36 transaction definitions. A token mapping is durable before its token can be published.</POSTCONDITION>
+      <POSTCONDITION>Conversation creation and each ConversationTx callback commit atomically or roll back without partial state. Membership, message, idempotency and read-marker operations preserve their respective DP36 transaction boundaries. Subscription and wakeToken durability are guaranteed by their separately declared repositories.</POSTCONDITION>
       <FORBIDDEN>Make authorization decisions on its own; store document content; grant document rights; perform ntfy HTTP publication inside a database transaction; migrate legacy production data.</FORBIDDEN>
       <INTENT>Provide the authoritative PostgreSQL transaction and persistence boundary for Chat-owned state.</INTENT>
       <INPUTS>Validated repository operations with the approved transaction/order requirements.</INPUTS>
