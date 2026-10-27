@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CLASS_FUNCTION_CONTRACTS
+  id="CFC36-001"
+  status="PROPOSED"
+  approval="PENDING"
+  issue="36"
+  revision="CFC36-001"
+  source_code_commit="1ebf5ee97ed9a2d06f6a4bc901d2c9986b84f398"
+  module_contracts_revision="MC36-002"
+  module_contracts_reviewed_commit="1512ef5e964f3561a9f65daa577dfdc8a6ca6e3f"
+  module_contracts_blob_sha="8e306c485b864a2b55bdebf09448175ad499b76a"
+  architecture_revision="DP36-002"
+  architecture_commit="cfdec98ef02de30493dc8b12125f789a6ca9ef9a"
+  architecture_blob_sha="18fc8abc55d2e67fbadbeb3ec25e8caee3d3878e"
+  requirements_revision="RA36-002"
+  requirements_blob_sha="646f1551919c50b7c9b23044d805aa1f4bb77d59"
+  technology_revision="TECH36-001"
+  technology_blob_sha="5ed9673000686d5628babd1e765c701c5622f1e0">
+
+  <PURPOSE>Define proposed class and function contracts for the Go service implementation of the approved Issue 36 module contracts. Existing signatures are transcribed from the recorded source commit; new names and signatures are proposals derived from DP36-002 and MC36-002, not claims about existing code.</PURPOSE>
+
+  <NORMATIVE_BOUNDARIES>
+    <RULE>RequirementsAnalysis.xml, Technology.xml, DevelopmentPlan.xml and the approved MC36-002 module/inter-module semantics are immutable inputs to this artifact.</RULE>
+    <RULE>Historical FC32-* and CC32-* contracts are not approval for Issue 36 and are not copied as target contracts.</RULE>
+    <RULE>All proposed symbols are design-only. This artifact does not authorize production code, migrations, tests, deployment, merge, or release.</RULE>
+    <RULE>No HTTP path or method is assigned for UnifiedPush registration or wakeToken resolution because the approved sources do not specify their exact route mapping. Both remain within the protected unversioned /conversations API surface; route mapping requires a separate contract decision before implementation.</RULE>
+    <RULE>The source repository contains no BFE Chat Android client implementation. Android push-receive and notification-activation behavior is traced to MC36-ANDROID-PUSH and MC36-NOTIFICATION-ACTIVATION, but Kotlin class/function signatures are intentionally not invented in this Go artifact.</RULE>
+    <RULE>Existing Issue 25 symbols are legacy implementation candidates only. Their current signatures do not establish that their current storage model, transaction semantics, or Centrifuge transport satisfy MC36-002.</RULE>
+    <RULE>Independent QA owns test creation and maintenance. This work must not create, modify, or delete tests.</RULE>
+  </NORMATIVE_BOUNDARIES>
+
+  <SOURCE_FILES id="CFC36-SOURCES">
+    <SOURCE path="cmd/bfe-chat-service/main.go" blob_sha="08519345deec993b420c1dd650c3e560e6bace3e"/>
+    <SOURCE path="internal/issue25/http.go" blob_sha="5498583bea2544be3e057ff11cd125ce9a4f8e8c"/>
+    <SOURCE path="internal/issue25/issue25.go" blob_sha="e9ef9108e46fd0262248fc8447b09479348d0461"/>
+    <SOURCE path="internal/issue25/lifecycle.go" blob_sha="96e8c75ebc96b80dd15f9eb5d0468fc21d6a025a"/>
+    <SOURCE path="internal/issue25/history.go" blob_sha="462fc21d78606e0926685b3e1bf22f7c2e2e3ee7"/>
+    <SOURCE path="internal/issue25/list.go" blob_sha="0f6a5d73626491fc7b2a56f47a2d01ac2ae950a0"/>
+    <SOURCE path="internal/issue25/notify.go" blob_sha="9e363b7d1771d85e6d5ee7c029a0b9cf1dd3496e"/>
+    <SOURCE path="internal/issue25/realtime.go" blob_sha="b5ed5d1dbb94621add2b714aeb47beb6dd9f0fc3"/>
+    <SOURCE path="internal/issue25/subscription.go" blob_sha="8b4196b5ab53af7a82565b1eafcd05f5d6b18ddd"/>
+    <SOURCE path="internal/authentication/authentication.go" blob_sha="00db14e97b033c12784daef1c2a1a8ef9a367afd"/>
+    <SOURCE path="internal/transport/transport.go" blob_sha="84931c193b77e9b1724b4b34036ded5759acbba1"/>
+    <SOURCE path="internal/conversations/conversations.go" blob_sha="337d8a3fe3577258332a64377472c8130c54a9ca"/>
+    <SOURCE path="internal/realtime/realtime.go" blob_sha="07504c6d0001b349259b43ffe7869d637b3f10a5"/>
+    <SOURCE path="internal/storage/storage.go" blob_sha="4ed474cc4e5bb2eaafa74c3b450f8ccea6f8fca3"/>
+    <SOURCE path="internal/assignments/assignments.go" blob_sha="7336e086d200220710b7d6e6f1b2605e105b2e58"/>
+  </SOURCE_FILES>
+
+  <DOMAIN_TYPES status="PROPOSED">
+    <TYPE id="CFC36-T-CONVERSATION-ID" name="ConversationID" signature="type ConversationID string">Opaque stable Chat conversation identifier. It is not authorization by itself.</TYPE>
+    <TYPE id="CFC36-T-ACCOUNT-ID" name="AccountID" signature="type AccountID string">Authenticated BFE account identifier. It is derived from validated caller context, never trusted from a client-supplied sender field.</TYPE>
+    <TYPE id="CFC36-T-WAKE-TOKEN" name="WakeToken" signature="type WakeToken string">Opaque, non-authorizing token. Do not log it, expose it in visible notification text, or use it as identity.</TYPE>
+    <TYPE id="CFC36-T-OPERATION" name="Operation" signature="type Operation uint8">Closed set of protected Chat operations used by policy evaluation; values must be enumerated before implementation and mapped to MC36 operation semantics.</TYPE>
+    <TYPE id="CFC36-T-ERROR" name="ContractError" signature="type ContractError struct { Code ErrorCode; Cause error }">Proposed typed internal error carrier. HTTP status mapping remains at the HTTP boundary; callers must not expose Cause or protected identifiers in error responses.</TYPE>
+  </DOMAIN_TYPES>
+
+  <CLASS_CONTRACTS>
+    <CLASS_CONTRACT id="CC36-HTTP-WIRING" name="HTTP application wiring" module_ref="MC36-HTTP" status="PROPOSED">
+      <CURRENT_SYMBOL source="cmd/bfe-chat-service/main.go" signature="func buildHandler(db *sql.DB, c runtimeConfig) (http.Handler, *centrifuge.Node, error)"/>
+      <PROPOSED_SIGNATURE>func buildHandler(deps RuntimeDependencies) (http.Handler, error)</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Compose the approved HTTP resource tree and inject identity, availability, policy, conversation, message, history, subscription, wakeToken, persistence and realtime dependencies.</RESPONSIBILITY>
+      <PRECONDITION>All configured dependencies are validated and ready; the PostgreSQL connection and Internal Auth UDS dependency are available.</PRECONDITION>
+      <POSTCONDITION>Return the protected unversioned /conversations handler. Do not expose /v1 or /v2 conversation aliases and do not wire Centrifuge or WebSocket as the Issue 36 realtime transport.</POSTCONDITION>
+      <SIDE_EFFECTS>Composition only; no conversation writes, token issuance or notification publication.</SIDE_EFFECTS>
+      <FAILURE_BEHAVIOR>Return an error if required configuration or dependencies are invalid; do not start a partially wired service.</FAILURE_BEHAVIOR>
+      <TRACE refs="MC36-HTTP DP36-M-HTTP DP36-F01 DP36-F05 REQ32-API REQ32-ISOLATION TECH36-INTERNAL-AUTH TECH36-PGX TD36-TRANSPORT"/>
+      <DECISION_NOTE>RuntimeConfig fields and environment variable names for newly required integrations are not defined here because the approved sources do not specify them. Resolve them in a separate configuration-level contract before implementation.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-HTTP-HANDLER" name="HTTPHandler" module_ref="MC36-HTTP" status="PROPOSED">
+      <CURRENT_SYMBOL source="internal/issue25/http.go" signature="func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)"/>
+      <PROPOSED_SIGNATURE>func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Validate request shape and documented size limits, delegate protected-request authentication and current authorization to their owning modules, dispatch to the responsible domain service, and map typed outcomes to HTTP responses.</RESPONSIBILITY>
+      <PRECONDITION>Handler dependencies are non-nil; request is presented to the approved unversioned /conversations resource tree.</PRECONDITION>
+      <POSTCONDITION>Malformed, unauthenticated, disabled, or unauthorized requests cause no protected domain mutation. Failure responses disclose no protected data.</POSTCONDITION>
+      <FORBIDDEN>Authenticate by trusting account UUID; decide membership locally; publish push events; infer or expose a conversation ID from wakeToken input; create undocumented route aliases.</FORBIDDEN>
+      <TRACE refs="MC36-HTTP MC36-IDENTITY MC36-AVAILABILITY MC36-POLICY DP36-F01 DP36-F05 REQ32-API REQ32-AUTH REQ32-LIMITS INV32-ONE-API"/>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-IDENTITY-VALIDATOR" name="authentication.Validator" module_ref="MC36-IDENTITY" status="PROPOSED_REUSE_CANDIDATE">
+      <CURRENT_SYMBOL source="internal/authentication/authentication.go" signature="func NewValidator(socketPath string, freshness time.Duration) (*Validator, error)"/>
+      <CURRENT_SYMBOL source="internal/authentication/authentication.go" signature="func (v *Validator) ValidateCaller(ctx context.Context, accessToken, proof string, binding RequestBinding) (Caller, error)"/>
+      <RESPONSIBILITY>Validate each protected API request against the BFE Drive session and session-bound DPoP proof through Internal Auth over UDS, including request method and canonical target binding.</RESPONSIBILITY>
+      <PRECONDITION>Internal Auth UDS endpoint is configured; the request's access token, proof and binding are supplied from the current request.</PRECONDITION>
+      <POSTCONDITION>Return caller/session context only on successful validation; reject missing, invalid, replayed or misbound proof.</POSTCONDITION>
+      <FORBIDDEN>Accept plain Bearer as a substitute for DPoP; infer Chat membership from account identity; treat wakeToken or push subscription as identity.</FORBIDDEN>
+      <TRACE refs="MC36-IDENTITY DP36-M-IDENTITY DP36-F01 DP36-F04 DP36-F05 REQ32-AUTH REQ32-ISOLATION INV32-DPOP TECH36-INTERNAL-AUTH"/>
+      <DECISION_NOTE>Reuse is conditional on independent comparison of current behavior against MC36-IDENTITY; this contract does not declare the legacy WebSocket-specific validation entry point to be the HTTP request contract.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-AVAILABILITY" name="AvailabilityService" module_ref="MC36-AVAILABILITY" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type ChatStateReader interface { ChatEnabled(ctx context.Context) (bool, error) }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type AvailabilityService struct { State ChatStateReader }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s AvailabilityService) RequireEnabled(ctx context.Context) error</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Read the authoritative administrative Chat enabled/disabled state and provide one fail-closed gate to protected operations.</RESPONSIBILITY>
+      <PRECONDITION>State reader is configured.</PRECONDITION>
+      <POSTCONDITION>Return nil only when Chat is enabled. Return a typed unavailable/disabled error when disabled. Treat inability to determine state as failure, not as enabled.</POSTCONDITION>
+      <SIDE_EFFECTS>Read state only.</SIDE_EFFECTS>
+      <FORBIDDEN>Assume enabled when the state source fails; promise forced closure of already-active ntfy subscriptions; impose an undocumented delivery-stop deadline.</FORBIDDEN>
+      <TRACE refs="MC36-AVAILABILITY DP36-M-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE"/>
+      <DECISION_NOTE>The authoritative state source and storage mechanism are not specified by the approved module contract. ChatStateReader is an abstraction; selecting its concrete provider is a separate implementation decision.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-POLICY" name="PolicyService" module_ref="MC36-POLICY" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type PolicyService struct { Availability AvailabilityChecker; Conversations ConversationPolicyReader }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s PolicyService) Authorize(ctx context.Context, in AuthorizationInput) error</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s PolicyService) AuthorizeVisibleMessage(ctx context.Context, caller AccountID, conversation ConversationID, ordinal int64) error</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Evaluate current availability, authenticated identity, membership, role, membership visibility interval and per-message visibility for each protected operation.</RESPONSIBILITY>
+      <PRECONDITION>Caller identity was validated for this request; operation and resource identifiers are parsed; current state can be read.</PRECONDITION>
+      <POSTCONDITION>Return success only when all current conditions for the requested operation are satisfied. Re-evaluate on every request; do not cache authorization as a substitute for current checks.</POSTCONDITION>
+      <FORBIDDEN>Grant access based only on account UUID, BFE Drive admin status, notification receipt, topic possession or wakeToken possession.</FORBIDDEN>
+      <TRACE refs="MC36-POLICY MC36-CONVERSATION MC36-AVAILABILITY DP36-D04 DP36-F01 DP36-F03 DP36-F05 DP36-F06 DP36-F07 DP36-F08 REQ32-AUTH REQ32-MEMBERSHIP REQ32-HISTORY REQ32-ROLES REQ36-WAKE-TOKEN REQ36-CHAT-STATE INV32-DPOP INV36-WAKE-TOKEN"/>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-CONVERSATION" name="ConversationService / conversation repository boundary" module_ref="MC36-CONVERSATION" status="PROPOSED_REUSE_OR_REPLACEMENT">
+      <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) OpenDirect(ctx context.Context, a, b string) (string, error)"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) CreateGroup(ctx context.Context, owner, name string, members []string) (string, error)"/>
+      <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) Join(ctx context.Context, conversation, actor, target, role string) (string, error)"/>
+      <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) RemoveWithEpoch(ctx context.Context, conversation, actor, target string) (string, error)"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) TransferOwner(ctx context.Context, conversation, owner, successor string) error"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) ChangeAdmin(ctx context.Context, conversation, owner, target string, promote bool) error"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) RenameGroup(ctx context.Context, conversation, actor, name string) error"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) HideDirect(ctx context.Context, conversation, viewer string, hidden bool) error"/>
+      <PROPOSED_SIGNATURE>type ConversationService struct { Repository ConversationRepository }</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Own stable direct/group identity, concurrency-safe direct-pair uniqueness, group owner/admin/member transitions, membership addition/removal, bounded visibility intervals, ownership-transfer and departure rules, and caller-only personal hide.</RESPONSIBILITY>
+      <PRECONDITION>Caller identity and current operation authorization have been validated; input bounds and identifiers are valid.</PRECONDITION>
+      <POSTCONDITION>Successful membership/role changes and visibility boundaries are committed atomically. A group retains exactly one owner after every successful mutation. Rejoining does not restore visibility to messages in the gap.</POSTCONDITION>
+      <FORBIDDEN>Authenticate external sessions; publish push events; copy document content; grant BFE Drive document rights; mutate membership outside the ordered transaction boundary.</FORBIDDEN>
+      <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-M-CONVERSATION DP36-D04 DP36-F03 DP36-F07 REQ32-MODEL REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ32-PRESERVE INV32-PRESERVE DP36-TX-MEMBERSHIP"/>
+      <DECISION_NOTE>The current issue25.Store is backed by database/sql and a legacy Issue 25 schema. Existing methods are candidates for behavior-level reuse only after proving the target PostgreSQL schema, transaction boundaries and semantics; do not copy them as implementation unchanged by default.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-MESSAGE" name="MessageService" module_ref="MC36-MESSAGE" status="PROPOSED_REUSE_OR_REPLACEMENT">
+      <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) Send(ctx context.Context, conversation, sender, key string, p Payload) (Message, error)"/>
+      <PROPOSED_SIGNATURE>type MessageService struct { Repository MessageRepository; Policy PolicyAuthorizer; Realtime CommittedMessageNotifier }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s MessageService) Send(ctx context.Context, caller CallerContext, conversation ConversationID, input SendMessageInput) (StoredMessage, error)</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Validate message and request limits, derive sender from the authenticated caller, require current membership, preserve optional document ID/title metadata, allocate conversation-scoped order and persist idempotency outcome in the same transaction.</RESPONSIBILITY>
+      <PRECONDITION>Identity, Chat availability and operation authorization have passed; message text is at most 16384 UTF-8 bytes; JSON request is at most 65536 bytes; idempotency key and optional document context satisfy their contracts.</PRECONDITION>
+      <POSTCONDITION>Commit message and idempotency result before realtime dispatch. Identical replay returns the original result without a new logical notification; conflicting replay returns a conflict. Push failure does not roll back the committed message.</POSTCONDITION>
+      <FORBIDDEN>Trust client-provided sender identity; store document content; grant document rights; put message or document metadata into wake payload.</FORBIDDEN>
+      <TRACE refs="MC36-MESSAGE MC36-POLICY MC36-PERSISTENCE MC36-REALTIME DP36-F02 DP36-D09 REQ32-MESSAGE REQ32-DOCUMENT REQ32-LIMITS REQ32-MEMBERSHIP REQ32-REALTIME INV32-PRESERVE TD36-DELIVERY-FAILURE DP36-TX-MESSAGE"/>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-HISTORY-READ" name="HistoryReadService" module_ref="MC36-HISTORY-READ" status="PROPOSED_REUSE_OR_REPLACEMENT">
+      <CURRENT_SYMBOL source="internal/issue25/history.go" signature="func (s Store) ReadHistoryDetailed(ctx context.Context, conversation, viewer string, after int64, limit int) ([]HistoryItem, error)"/>
+      <CURRENT_SYMBOL source="internal/issue25/issue25.go" signature="func (s Store) AuthorizeHistory(ctx context.Context, conversation, viewer string) error"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) MarkRead(ctx context.Context, conversation, viewer string, ordinal int64) (int64, error)"/>
+      <CURRENT_SYMBOL source="internal/issue25/lifecycle.go" signature="func (s Store) Unread(ctx context.Context, conversation, viewer string) (int64, error)"/>
+      <PROPOSED_SIGNATURE>func (s HistoryReadService) ReadPage(ctx context.Context, caller CallerContext, conversation ConversationID, after int64, limit int) (HistoryPage, error)</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s HistoryReadService) MarkRead(ctx context.Context, caller CallerContext, conversation ConversationID, ordinal int64) (int64, error)</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s HistoryReadService) Unread(ctx context.Context, caller CallerContext, conversation ConversationID) (int64, error)</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Return cursor-paginated history in stable conversation order, filtered by current membership visibility intervals, and maintain monotonic per-account/per-conversation read markers.</RESPONSIBILITY>
+      <PRECONDITION>Caller is authenticated; Chat is enabled; current membership and visibility are checked for this request. Default page size is 50 and maximum is 100.</PRECONDITION>
+      <POSTCONDITION>Only visible messages are returned. Document ID/title are returned only with a visible message where metadata was stored; no document content or document-access grant is returned. Read marker advances only for the authenticated caller and never decreases.</POSTCONDITION>
+      <FORBIDDEN>Infer missing messages from push receipts; return messages outside visibility intervals; advance another account's read marker; grant BFE Drive document rights.</FORBIDDEN>
+      <TRACE refs="MC36-HISTORY-READ MC36-POLICY MC36-PERSISTENCE DP36-F05 DP36-F06 DP36-D13 REQ32-HISTORY REQ32-DOCUMENT REQ32-READ REQ32-MEMBERSHIP REQ32-AUTH INV32-PRESERVE DP36-TX-READ-MARKER"/>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-PERSISTENCE" name="ConversationRepository" module_ref="MC36-PERSISTENCE" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type ConversationRepository interface { WithConversationTx(ctx context.Context, conversation ConversationID, fn func(ConversationTx) error) error; ReadHistoryPage(ctx context.Context, conversation ConversationID, viewer AccountID, after int64, limit int) (HistoryPage, error); UpsertSubscription(ctx context.Context, account AccountID, subscription PushSubscription) error; DeleteSubscription(ctx context.Context, account AccountID) error; SaveWakeToken(ctx context.Context, token WakeToken, conversation ConversationID) error; ResolveWakeToken(ctx context.Context, token WakeToken) (ConversationID, error) }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type ConversationTx interface { LockConversation(ctx context.Context, conversation ConversationID) error; RequireActiveMember(ctx context.Context, conversation ConversationID, account AccountID) (MembershipState, error); InsertMessage(ctx context.Context, message NewMessage) (StoredMessage, error); SaveIdempotencyResult(ctx context.Context, key IdempotencyKey, result StoredMessage) error; ActiveRecipients(ctx context.Context, conversation ConversationID, exclude AccountID) ([]Recipient, error); CloseMembershipVisibility(ctx context.Context, conversation ConversationID, account AccountID) error; AdvanceReadMarker(ctx context.Context, conversation ConversationID, account AccountID, ordinal int64) (int64, error) }</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Own PostgreSQL persistence and atomic boundaries for conversations, membership intervals, ordered messages, idempotency, read markers, protected push subscriptions and durable wakeToken mappings.</RESPONSIBILITY>
+      <PRECONDITION>All calls use the approved PostgreSQL 18.4 / pgx v5 persistence boundary; transaction callbacks do not perform external network I/O.</PRECONDITION>
+      <POSTCONDITION>Membership changes, message ordering, message/idempotency persistence and visibility boundaries are atomic as required by DP36 transaction definitions. A token mapping is durable before its token can be published.</POSTCONDITION>
+      <FORBIDDEN>Make authorization decisions on its own; store document content; grant document rights; perform ntfy HTTP publication inside a database transaction; migrate legacy production data.</FORBIDDEN>
+      <TRACE refs="MC36-PERSISTENCE MC36-CONVERSATION MC36-MESSAGE MC36-HISTORY-READ MC36-SUBSCRIPTION MC36-WAKETOKEN DP36-M-PERSISTENCE DP36-TX-MESSAGE DP36-TX-MEMBERSHIP DP36-TX-TOKEN DP36-TX-READ-MARKER DP36-TX-SUBSCRIPTION REQ32-PRESERVE REQ32-DOCUMENT TECH36-POSTGRESQL TECH36-PGX TECH36-GOOSE TD36-DATA-AND-ACCESS"/>
+      <DECISION_NOTE>ConversationTx and the proposed method set are interface proposals, not current symbols. Final repository method granularity must be checked against the complete DP36 transaction graph before implementation.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-SUBSCRIPTION" name="SubscriptionService" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type PushSubscription struct { Endpoint string; P256DH string; AuthSecret string }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type SubscriptionService struct { Availability AvailabilityChecker; EndpointValidator PushEndpointValidator; Repository SubscriptionRepository }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) error</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, input PushSubscription) error</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext) error</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Register, replace and remove the authenticated account's UnifiedPush delivery destination and encryption material.</RESPONSIBILITY>
+      <PRECONDITION>Caller identity and DPoP are validated; Chat is enabled; endpoint passes origin/scheme validation; public key and auth secret are valid for the approved Web Push encryption flow.</PRECONDITION>
+      <POSTCONDITION>Subscription state is stored as protected account data. A subscription grants no membership or history access. The endpoint and secrets are not returned to another account or logged.</POSTCONDITION>
+      <FORBIDDEN>Accept registration while disabled; trust a client-selected arbitrary origin; expose ntfy admin credentials; use subscription possession as authorization.</FORBIDDEN>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION TD36-NTFY-ACL DP36-TX-SUBSCRIPTION"/>
+      <DECISION_NOTE>No HTTP route or request/response JSON shape is assigned by this contract; the approved sources do not specify them. Register/Replace may be exposed only after a separate route-mapping contract identifies the exact API path and method.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-ENDPOINT-SECURITY" name="PushEndpointValidator" module_ref="MC36-ENDPOINT-SECURITY" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type PushEndpointValidator interface { Validate(rawEndpoint string, configuredOrigin *url.URL) (*url.URL, error) }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func NewPushHTTPClient() *http.Client</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Validate registered push endpoint capabilities and constrain every outbound request to the configured ntfy server origin.</RESPONSIBILITY>
+      <PRECONDITION>Configured origin is valid and trusted server configuration, not client input.</PRECONDITION>
+      <POSTCONDITION>Accept only HTTPS endpoint URLs whose origin exactly matches the configured ntfy origin. The HTTP client rejects redirects rather than following them.</POSTCONDITION>
+      <FORBIDDEN>Permit arbitrary hosts, non-HTTPS schemes, origin overrides, redirects, webhook destinations or second push-server origins.</FORBIDDEN>
+      <TRACE refs="MC36-ENDPOINT-SECURITY MC36-SUBSCRIPTION MC36-REALTIME DP36-F04 REQ32-AUTH REQ32-ISOLATION TD36-ENDPOINT-SECURITY"/>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-WAKETOKEN" name="WakeTokenService" module_ref="MC36-WAKETOKEN" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type WakeTokenService struct { Repository WakeTokenRepository; Random io.Reader }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s WakeTokenService) Issue(ctx context.Context, conversation ConversationID) (WakeToken, error)</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s WakeTokenService) Resolve(ctx context.Context, token WakeToken) (ConversationID, error)</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Generate an opaque token from cryptographic randomness, persist its durable conversation mapping, and resolve it repeatedly within the protected server-side boundary.</RESPONSIBILITY>
+      <PRECONDITION>Conversation is committed and valid before Issue; repository is available.</PRECONDITION>
+      <POSTCONDITION>Issue returns a token only after its mapping is durable. Resolve does not consume or invalidate the token and does not itself grant authorization. Mapping retention has no arbitrary fixed TTL while an issued notification may still be delivered, queued, retried or activated.</POSTCONDITION>
+      <FORBIDDEN>Use account or conversation identifiers as token; log or expose token; authorize based on token possession; reveal whether a token maps to a real conversation on failure.</FORBIDDEN>
+      <TRACE refs="MC36-WAKETOKEN MC36-PERSISTENCE MC36-POLICY MC36-AVAILABILITY DP36-F02 DP36-F05 DP36-F07 DP36-F08 DP36-D12 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN DP36-TX-TOKEN"/>
+      <DECISION_NOTE>The exact protected HTTP route that invokes Resolve is intentionally unspecified here. The handler must require current DPoP, availability and policy checks and must normalize failed-resolution responses to avoid token-existence disclosure.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-REALTIME" name="RealtimeWakeService" module_ref="MC36-REALTIME" status="PROPOSED_NEW">
+      <PROPOSED_SIGNATURE>type WakePayload struct { ProtocolVersion string; WakeToken WakeToken }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type EncryptedWakePayload struct { Body []byte; ContentEncoding string }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type WebPushEncryptor interface { Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error) }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type NtfyPublisher interface { Publish(ctx context.Context, endpoint *url.URL, topic string, payload EncryptedWakePayload) error }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type RealtimeWakeService struct { Repository RealtimeRepository; Tokens WakeTokenIssuer; Encryptor WebPushEncryptor; Publisher NtfyPublisher }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s RealtimeWakeService) NotifyCommitted(ctx context.Context, event CommittedMessage) error</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (e WebPushEncryptor) Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error)</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>After message commit, select currently eligible active recipients excluding the sender, recheck eligibility before each publication, ensure durable token mapping before publish, encrypt the exact allowlisted payload with RFC 8291 aes128gcm, publish via ntfy and record outcome without secrets.</RESPONSIBILITY>
+      <PRECONDITION>Message transaction has committed; event contains no client-trusted sender; subscription endpoint and encryption material have passed validation.</PRECONDITION>
+      <POSTCONDITION>Encrypted payload carries only protocol version and opaque wakeToken. Delivery failure is recorded but does not roll back committed history. An idempotent replay does not create a new logical notification.</POSTCONDITION>
+      <FORBIDDEN>Include message text, conversation/account identifiers, document IDs/titles or document content; publish before commit; use Centrifuge/WebSocket; expose ntfy administrative credentials; perform network I/O inside the message transaction.</FORBIDDEN>
+      <TRACE refs="MC36-REALTIME MC36-PERSISTENCE MC36-WAKETOKEN MC36-ENDPOINT-SECURITY DP36-D02 DP36-D09 DP36-F02 DP36-F07 DP36-F08 REQ32-REALTIME REQ32-DOCUMENT REQ32-MEMBERSHIP REQ36-WAKE-TOKEN REQ36-NOTIFICATION INV36-OPAQUE-WAKE INV36-WAKE-TOKEN TD36-TRANSPORT TD36-WEBPUSH TD36-PAYLOAD TD36-NTFY-ACL TD36-DELIVERY-FAILURE TECH36-INTEROP-CHECK"/>
+      <DECISION_NOTE>Recipient ordering, durable delivery-attempt semantics, encryption header serialization and ntfy request mapping must be specified from the approved TD36 decisions and verified in class/function QA before implementation. This contract does not claim runtime interoperability.</DECISION_NOTE>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-ANDROID-PUSH-BOUNDARY" name="BFE Chat Android push receiver" module_ref="MC36-ANDROID-PUSH" status="EXTERNAL_SOURCE_REQUIRED">
+      <RESPONSIBILITY>Receive the decrypted UnifiedPush wake payload, accept only protocol version and opaque wakeToken, retain only those fields in internal navigation state, and create a generic system notification without protected content.</RESPONSIBILITY>
+      <PRECONDITION>Android client uses the approved UnifiedPush connector 3.3.5 and ntfy Android distributor target.</PRECONDITION>
+      <POSTCONDITION>Visible notification text contains no message text, account/conversation identifiers, document metadata or content. Receipt is never treated as authorization.</POSTCONDITION>
+      <FORBIDDEN>Resolve token locally, embed token in visible text or URL, or fetch history before protected activation resolution.</FORBIDDEN>
+      <TRACE refs="MC36-ANDROID-PUSH DP36-M-ANDROID-PUSH DP36-F05 REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-TRANSPORT TD36-PAYLOAD TD36-ANDROID-NOTIFICATION TECH36-UP-ANDROID TECH36-NTFY-ANDROID"/>
+      <BLOCKER>The Android source repository and its current Kotlin symbols are not present in bfe-chat-service. Exact Android class/function signatures must be created against that repository; no Kotlin signature is invented here.</BLOCKER>
+    </CLASS_CONTRACT>
+
+    <CLASS_CONTRACT id="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" name="BFE Chat Android notification activation" module_ref="MC36-NOTIFICATION-ACTIVATION" status="EXTERNAL_SOURCE_REQUIRED">
+      <RESPONSIBILITY>On activation, submit wakeToken through the protected Chat API using the current session-bound DPoP context; navigate only after successful server resolution, then fetch authorized cursor-based history.</RESPONSIBILITY>
+      <PRECONDITION>Notification internal state contains protocol version and wakeToken only; current session context is available.</PRECONDITION>
+      <POSTCONDITION>No conversation navigation or protected history request occurs before successful token resolution. Disabled Chat, revoked membership, invalid token and visibility failures fail closed without protected disclosure.</POSTCONDITION>
+      <FORBIDDEN>Trust notification-carried conversation identifiers; locally resolve token; bypass current DPoP, availability or authorization checks.</FORBIDDEN>
+      <TRACE refs="MC36-NOTIFICATION-ACTIVATION MC36-WAKETOKEN MC36-HISTORY-READ DP36-D12 DP36-D13 DP36-F05 DP36-F08 REQ36-NOTIFICATION REQ36-WAKE-TOKEN REQ32-AUTH REQ32-HISTORY REQ36-CHAT-STATE INV36-OPAQUE-WAKE INV36-WAKE-TOKEN TD36-ANDROID-NOTIFICATION"/>
+      <BLOCKER>The Android source repository and its current Kotlin symbols are not present in bfe-chat-service. Exact Android class/function signatures must be created against that repository; no Kotlin signature is invented here.</BLOCKER>
+    </CLASS_CONTRACT>
+  </CLASS_CONTRACTS>
+
+  <FUNCTION_CONTRACTS>
+    <FUNCTION_CONTRACT id="FC36-HTTP-ENTRY" name="HTTPHandler.ServeHTTP" module_ref="MC36-HTTP" status="PROPOSED_REUSE_CANDIDATE" signature="func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)" source="internal/issue25/http.go">
+      <INPUTS>HTTP request, response writer and injected service dependencies.</INPUTS>
+      <PRECONDITIONS>Request is received under the single unversioned /conversations tree; request shape and size can be validated before side effects.</PRECONDITIONS>
+      <POSTCONDITIONS>Dispatch only to the responsible service after authentication and availability checks; no protected mutation occurs on rejected input or failed authorization.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Map validation, authentication, availability, authorization, conflict and internal errors at the HTTP boundary without disclosing protected values.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>HTTP response only; service calls may have effects only after all required gates pass.</SIDE_EFFECTS>
+      <TRACE refs="MC36-HTTP DP36-F01 DP36-F05 REQ32-API REQ32-LIMITS"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-IDENTITY-VALIDATE" name="Validator.ValidateCaller" module_ref="MC36-IDENTITY" status="PROPOSED_REUSE_CANDIDATE" signature="func (v *Validator) ValidateCaller(ctx context.Context, accessToken, proof string, binding RequestBinding) (Caller, error)" source="internal/authentication/authentication.go">
+      <INPUTS>Current request access token, DPoP proof and method/canonical-target binding.</INPUTS>
+      <OUTPUTS>Authenticated Caller or an error.</OUTPUTS>
+      <PRECONDITIONS>Validator is configured with the approved Internal Auth UDS endpoint and freshness policy.</PRECONDITIONS>
+      <POSTCONDITIONS>Caller is returned only if session and DPoP proof are valid, fresh, non-replayed and bound to this request.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Reject all invalid or ambiguous authentication input; do not fall back to Bearer authentication.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Internal Auth request and replay-protection state only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-IDENTITY DP36-F01 DP36-F04 DP36-F05 REQ32-AUTH INV32-DPOP TECH36-INTERNAL-AUTH"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-AVAILABILITY-GATE" name="AvailabilityService.RequireEnabled" module_ref="MC36-AVAILABILITY" status="PROPOSED_NEW" signature="func (s AvailabilityService) RequireEnabled(ctx context.Context) error">
+      <INPUTS>Request context.</INPUTS><OUTPUTS>Nil only when administrative Chat state is enabled; typed error otherwise.</OUTPUTS>
+      <PRECONDITIONS>Authoritative state reader is configured.</PRECONDITIONS>
+      <POSTCONDITIONS>Disabled state denies operations, history, token resolution and new registrations; state-read failure fails closed.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Return a non-disclosing error; never treat unknown state as enabled.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read administrative state only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-POLICY-AUTHORIZE" name="PolicyService.Authorize" module_ref="MC36-POLICY" status="PROPOSED_NEW" signature="func (s PolicyService) Authorize(ctx context.Context, in AuthorizationInput) error">
+      <INPUTS>Authenticated caller, operation, conversation identifier and optional message ordinal.</INPUTS><OUTPUTS>Authorization success or non-disclosing denial.</OUTPUTS>
+      <PRECONDITIONS>Identity validation completed for the current request.</PRECONDITIONS>
+      <POSTCONDITIONS>Current availability, membership, role, visibility interval and per-message visibility are evaluated for this operation; no prior decision substitutes for revalidation.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Fail closed on missing membership, stale visibility, denied role or unavailable policy dependencies.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read policy and conversation state only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-POLICY MC36-CONVERSATION MC36-AVAILABILITY DP36-D04 DP36-F01 DP36-F03 DP36-F05 DP36-F06 DP36-F07 DP36-F08 REQ32-AUTH REQ32-MEMBERSHIP REQ32-ROLES REQ32-HISTORY REQ36-WAKE-TOKEN REQ36-CHAT-STATE"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-CONVERSATION-DIRECT" name="Store.OpenDirect" module_ref="MC36-CONVERSATION" status="LEGACY_SIGNATURE_CANDIDATE" signature="func (s Store) OpenDirect(ctx context.Context, a, b string) (string, error)" source="internal/issue25/issue25.go">
+      <INPUTS>Two distinct authenticated account identifiers.</INPUTS><OUTPUTS>Stable conversation identifier.</OUTPUTS>
+      <PRECONDITIONS>Caller authorization passed; account identifiers are valid and distinct.</PRECONDITIONS>
+      <POSTCONDITIONS>Return one stable conversation for the unordered pair under concurrent requests; self-direct is rejected; no duplicate pair is created.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Return typed validation/conflict/storage error without partial membership state.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Atomic conversation and membership writes.</SIDE_EFFECTS>
+      <TRACE refs="MC36-CONVERSATION DP36-F01 REQ32-DIRECT REQ32-MODEL DP36-TX-MEMBERSHIP"/>
+      <LEGACY_WARNING>Current implementation is not approved as target persistence until its schema and transaction behavior are independently mapped.</LEGACY_WARNING>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-CONVERSATION-GROUP" name="Store.CreateGroup" module_ref="MC36-CONVERSATION" status="LEGACY_SIGNATURE_CANDIDATE" signature="func (s Store) CreateGroup(ctx context.Context, owner, name string, members []string) (string, error)" source="internal/issue25/lifecycle.go">
+      <INPUTS>Authenticated owner, group name and selected member identifiers.</INPUTS><OUTPUTS>Stable group conversation identifier.</OUTPUTS>
+      <PRECONDITIONS>Group name is at most 256 UTF-8 bytes; no more than 100 members including owner; member identifiers are valid.</PRECONDITIONS>
+      <POSTCONDITIONS>Creator is the sole owner; group and initial membership rows are committed atomically.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Reject invalid input before writes; no partial group is created.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Atomic conversation and membership writes.</SIDE_EFFECTS>
+      <TRACE refs="MC36-CONVERSATION DP36-F01 REQ32-GROUP REQ32-LIMITS REQ32-ROLES DP36-TX-MEMBERSHIP"/>
+      <LEGACY_WARNING>Current implementation is not approved as target persistence until its schema and transaction behavior are independently mapped.</LEGACY_WARNING>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-CONVERSATION-MEMBERSHIP" name="Store.Join / Store.RemoveWithEpoch" module_ref="MC36-CONVERSATION" status="LEGACY_SIGNATURE_CANDIDATE">
+      <CURRENT_SIGNATURE name="Join">func (s Store) Join(ctx context.Context, conversation, actor, target, role string) (string, error)</CURRENT_SIGNATURE>
+      <CURRENT_SIGNATURE name="RemoveWithEpoch">func (s Store) RemoveWithEpoch(ctx context.Context, conversation, actor, target string) (string, error)</CURRENT_SIGNATURE>
+      <INPUTS>Current actor, conversation, target account and requested role where applicable.</INPUTS><OUTPUTS>Updated membership boundary or typed error.</OUTPUTS>
+      <PRECONDITIONS>Actor is authenticated and current policy permits the mutation.</PRECONDITIONS>
+      <POSTCONDITIONS>Mutation and visibility interval boundary commit atomically; removal immediately denies subsequent protected operations and prevents new notifications; rejoin does not expose messages from the gap.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Unauthorized and invalid transitions do not mutate state.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Membership and visibility interval writes in one ordered transaction.</SIDE_EFFECTS>
+      <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F03 DP36-F07 REQ32-MEMBERSHIP REQ32-ROLES DP36-TX-MEMBERSHIP"/>
+      <LEGACY_WARNING>Current implementation is not approved as target persistence until its schema and transaction behavior are independently mapped.</LEGACY_WARNING>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-CONVERSATION-OWNERSHIP" name="Store.TransferOwner / Store.ChangeAdmin" module_ref="MC36-CONVERSATION" status="LEGACY_SIGNATURE_CANDIDATE">
+      <CURRENT_SIGNATURE name="TransferOwner">func (s Store) TransferOwner(ctx context.Context, conversation, owner, successor string) error</CURRENT_SIGNATURE>
+      <CURRENT_SIGNATURE name="ChangeAdmin">func (s Store) ChangeAdmin(ctx context.Context, conversation, owner, target string, promote bool) error</CURRENT_SIGNATURE>
+      <INPUTS>Conversation, authenticated actor, target account and role operation.</INPUTS><OUTPUTS>Success or typed denial/validation error.</OUTPUTS>
+      <PRECONDITIONS>Current owner/admin role and membership are checked.</PRECONDITIONS>
+      <POSTCONDITIONS>Exactly one owner remains; only permitted role transitions succeed; admins cannot appoint admins or transfer ownership.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Denied transitions leave roles and membership unchanged.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Atomic role/ownership writes.</SIDE_EFFECTS>
+      <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F03 REQ32-GROUP REQ32-ROLES DP36-TX-MEMBERSHIP"/>
+      <LEGACY_WARNING>Current implementation is not approved as target persistence until its schema and transaction behavior are independently mapped.</LEGACY_WARNING>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-MESSAGE-SEND" name="MessageService.Send" module_ref="MC36-MESSAGE" status="PROPOSED_NEW" signature="func (s MessageService) Send(ctx context.Context, caller CallerContext, conversation ConversationID, input SendMessageInput) (StoredMessage, error)">
+      <INPUTS>Validated caller context, conversation identifier, message payload, optional document ID/title metadata and idempotency key.</INPUTS><OUTPUTS>Committed message and its stable conversation-scoped ordinal.</OUTPUTS>
+      <PRECONDITIONS>Caller identity, availability and current membership are validated; text is at most 16384 UTF-8 bytes; JSON request is at most 65536 bytes.</PRECONDITIONS>
+      <POSTCONDITIONS>Message, monotonic ordinal and idempotency outcome are committed atomically before notification dispatch. Identical replay returns the prior result; differing replay conflicts.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>No partial message on validation/transaction failure. Realtime failure does not roll back committed history.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Database transaction; post-commit realtime notification attempt only for a new logical message.</SIDE_EFFECTS>
+      <TRACE refs="MC36-MESSAGE MC36-PERSISTENCE MC36-REALTIME DP36-F02 DP36-D09 REQ32-MESSAGE REQ32-DOCUMENT REQ32-LIMITS REQ32-REALTIME TD36-DELIVERY-FAILURE DP36-TX-MESSAGE"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-HISTORY-PAGE" name="HistoryReadService.ReadPage" module_ref="MC36-HISTORY-READ" status="PROPOSED_NEW" signature="func (s HistoryReadService) ReadPage(ctx context.Context, caller CallerContext, conversation ConversationID, after int64, limit int) (HistoryPage, error)">
+      <INPUTS>Authenticated caller context, conversation identifier, cursor and requested page size.</INPUTS><OUTPUTS>Cursor-paginated visible messages and next cursor.</OUTPUTS>
+      <PRECONDITIONS>Chat enabled; current membership and visibility policy checked; default limit 50 and maximum 100.</PRECONDITIONS>
+      <POSTCONDITIONS>Stable conversation order and visibility-interval filtering apply to every page; document ID/title appear only on visible stored messages; no document content is returned.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Reject invalid limits and unauthorized access without returning protected rows.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read-only query.</SIDE_EFFECTS>
+      <TRACE refs="MC36-HISTORY-READ MC36-POLICY MC36-PERSISTENCE DP36-F05 DP36-F06 REQ32-HISTORY REQ32-DOCUMENT REQ32-MEMBERSHIP REQ32-AUTH"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-HISTORY-READ-MARKER" name="HistoryReadService.MarkRead" module_ref="MC36-HISTORY-READ" status="PROPOSED_NEW" signature="func (s HistoryReadService) MarkRead(ctx context.Context, caller CallerContext, conversation ConversationID, ordinal int64) (int64, error)">
+      <INPUTS>Authenticated caller context, conversation identifier and target ordinal.</INPUTS><OUTPUTS>Persisted monotonic read marker.</OUTPUTS>
+      <PRECONDITIONS>Current caller membership and read-state authorization pass; ordinal is within the allowed conversation range.</PRECONDITIONS>
+      <POSTCONDITIONS>Only the caller's marker advances; it never decreases and is shared across devices.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Unauthorized or invalid advances do not mutate another account's state.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>One read-marker write.</SIDE_EFFECTS>
+      <TRACE refs="MC36-HISTORY-READ MC36-PERSISTENCE DP36-F06 REQ32-READ REQ32-MEMBERSHIP DP36-TX-READ-MARKER"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REGISTER" name="SubscriptionService.Register" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) error">
+      <INPUTS>Authenticated caller context, UnifiedPush endpoint, p256dh public key and auth secret.</INPUTS><OUTPUTS>Success or non-disclosing validation/authorization/storage error.</OUTPUTS>
+      <PRECONDITIONS>Caller has valid session-bound DPoP; Chat is enabled; endpoint origin and HTTPS are validated; encryption material is valid.</PRECONDITIONS>
+      <POSTCONDITIONS>Protected subscription data is associated with the authenticated account. No membership or history rights are granted.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Invalid endpoint or disabled Chat results in no subscription write.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Protected subscription persistence only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-IDENTITY MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION DP36-TX-SUBSCRIPTION"/>
+      <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REPLACE" name="SubscriptionService.Replace" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, input PushSubscription) error">
+      <INPUTS>Authenticated caller context and replacement endpoint/encryption material.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
+      <PRECONDITIONS>Current identity and availability pass; new endpoint passes exact-origin validation.</PRECONDITIONS>
+      <POSTCONDITIONS>Only the authenticated account's active subscription is replaced atomically; no other account's subscription is modified.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Invalid replacement preserves the existing valid subscription.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Protected subscription persistence only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION TD36-REGISTRATION DP36-TX-SUBSCRIPTION"/>
+      <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REMOVE" name="SubscriptionService.Remove" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext) error">
+      <INPUTS>Authenticated caller context.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
+      <PRECONDITIONS>Caller identity is validated; target account is derived only from caller context.</PRECONDITIONS>
+      <POSTCONDITIONS>Only the authenticated account's subscription is removed; conversation membership and history permissions are unchanged.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Storage failure is reported without disclosing subscription secrets.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Protected subscription deletion only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-PERSISTENCE DP36-F04 REQ32-AUTH TD36-REGISTRATION DP36-TX-SUBSCRIPTION"/>
+      <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-ENDPOINT-VALIDATE" name="PushEndpointValidator.Validate" module_ref="MC36-ENDPOINT-SECURITY" status="PROPOSED_NEW" signature="Validate(rawEndpoint string, configuredOrigin *url.URL) (*url.URL, error)">
+      <INPUTS>Registered endpoint and trusted configured ntfy origin.</INPUTS><OUTPUTS>Validated endpoint URL or error.</OUTPUTS>
+      <PRECONDITIONS>Configured origin comes from trusted service configuration and is valid.</PRECONDITIONS>
+      <POSTCONDITIONS>Only HTTPS endpoints with exact origin match are accepted.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Reject invalid URL, non-HTTPS scheme, userinfo, origin mismatch or invalid endpoint before persistence/publication.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>None.</SIDE_EFFECTS>
+      <TRACE refs="MC36-ENDPOINT-SECURITY MC36-SUBSCRIPTION DP36-F04 REQ32-ISOLATION TD36-ENDPOINT-SECURITY"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-ENDPOINT-CLIENT" name="NewPushHTTPClient" module_ref="MC36-ENDPOINT-SECURITY" status="PROPOSED_NEW" signature="func NewPushHTTPClient() *http.Client">
+      <INPUTS>None; returns a service-configured HTTP client.</INPUTS><OUTPUTS>HTTP client configured not to follow redirects.</OUTPUTS>
+      <PRECONDITIONS>Client is used only after endpoint origin validation.</PRECONDITIONS>
+      <POSTCONDITIONS>Redirect responses are rejected; requests cannot be redirected to an unapproved origin.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Return redirect errors to the caller; do not retry the redirected destination.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>None at construction time.</SIDE_EFFECTS>
+      <TRACE refs="MC36-ENDPOINT-SECURITY MC36-REALTIME DP36-F04 REQ32-ISOLATION TD36-ENDPOINT-SECURITY"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-WAKETOKEN-ISSUE" name="WakeTokenService.Issue" module_ref="MC36-WAKETOKEN" status="PROPOSED_NEW" signature="func (s WakeTokenService) Issue(ctx context.Context, conversation ConversationID) (WakeToken, error)">
+      <INPUTS>Committed conversation identifier.</INPUTS><OUTPUTS>Opaque WakeToken with durable mapping.</OUTPUTS>
+      <PRECONDITIONS>Conversation exists; cryptographic random source and persistence are available.</PRECONDITIONS>
+      <POSTCONDITIONS>Token mapping is durable before token is returned for publication; no arbitrary fixed TTL is assigned.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Do not return a token if mapping persistence fails.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Generate random token and persist token-to-conversation mapping.</SIDE_EFFECTS>
+      <TRACE refs="MC36-WAKETOKEN MC36-PERSISTENCE MC36-REALTIME DP36-F02 DP36-F05 REQ36-WAKE-TOKEN INV36-WAKE-TOKEN TD36-TOKEN DP36-TX-TOKEN"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-WAKETOKEN-RESOLVE" name="WakeTokenService.Resolve" module_ref="MC36-WAKETOKEN" status="PROPOSED_NEW" signature="func (s WakeTokenService) Resolve(ctx context.Context, token WakeToken) (ConversationID, error)">
+      <INPUTS>Opaque token submitted through the protected API.</INPUTS><OUTPUTS>Conversation identifier after mapping lookup, or normalized failure.</OUTPUTS>
+      <PRECONDITIONS>Caller has authenticated and the availability and policy gates are executed by the protected API orchestration before protected data is returned.</PRECONDITIONS>
+      <POSTCONDITIONS>Lookup is repeatable and non-consuming. This method does not authorize access; caller policy must recheck current membership/visibility after resolution.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Externally normalize invalid, missing and unauthorized token outcomes so they do not reveal token existence or conversation identity.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read mapping only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-WAKETOKEN MC36-POLICY MC36-AVAILABILITY DP36-D12 DP36-F05 DP36-F07 DP36-F08 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN"/>
+      <ROUTE_STATUS>Exact protected HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-WAKE-ENCRYPT" name="WebPushEncryptor.Encrypt" module_ref="MC36-REALTIME" status="PROPOSED_NEW" signature="func (e WebPushEncryptor) Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error)">
+      <INPUTS>Validated subscriber p256dh/auth material and WakePayload.</INPUTS><OUTPUTS>RFC 8291 aes128gcm encrypted payload.</OUTPUTS>
+      <PRECONDITIONS>Payload contains exactly protocol version and opaque wakeToken; subscriber key material is valid.</PRECONDITIONS>
+      <POSTCONDITIONS>Encrypted application payload contains no additional application fields. Uses P-256 ECDH, HKDF-SHA256 and AES-GCM as specified by TD36-WEBPUSH.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Reject invalid key material or encryption failures without logging secrets or plaintext payload.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Cryptographic computation only.</SIDE_EFFECTS>
+      <TRACE refs="MC36-REALTIME MC36-ANDROID-PUSH DP36-F02 REQ32-REALTIME REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-WEBPUSH TD36-PAYLOAD"/>
+    </FUNCTION_CONTRACT>
+
+    <FUNCTION_CONTRACT id="FC36-REALTIME-NOTIFY" name="RealtimeWakeService.NotifyCommitted" module_ref="MC36-REALTIME" status="PROPOSED_NEW" signature="func (s RealtimeWakeService) NotifyCommitted(ctx context.Context, event CommittedMessage) error">
+      <INPUTS>Event for a newly committed message, including conversation, server-derived sender, stable message identifier/ordinal and replay status.</INPUTS><OUTPUTS>Delivery attempt outcome or a non-fatal dispatch error.</OUTPUTS>
+      <PRECONDITIONS>Message transaction has committed; replay status is known; no external network call occurs inside the message transaction.</PRECONDITIONS>
+      <POSTCONDITIONS>Current eligible recipients are rechecked before each publication; sender is excluded; token mapping is durable before publish; only encrypted allowlisted payload is published; delivery outcome is recorded without secrets.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Return/record delivery failure without rolling back committed message. Replayed message creates no new logical notification.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read recipient/subscription state, persist token mapping and delivery outcome, perform outbound HTTPS requests to validated ntfy endpoints.</SIDE_EFFECTS>
+      <TRACE refs="MC36-REALTIME MC36-PERSISTENCE MC36-WAKETOKEN MC36-ENDPOINT-SECURITY DP36-D02 DP36-D09 DP36-F02 DP36-F07 DP36-F08 REQ32-REALTIME REQ32-DOCUMENT REQ32-MEMBERSHIP REQ36-WAKE-TOKEN INV36-OPAQUE-WAKE INV36-WAKE-TOKEN TD36-NTFY-ACL TD36-DELIVERY-FAILURE TECH36-INTEROP-CHECK"/>
+    </FUNCTION_CONTRACT>
+  </FUNCTION_CONTRACTS>
+
+  <TRACEABILITY_AND_GAPS>
+    <MODULE_COVERAGE>
+      <COVERED module_ref="MC36-HTTP" contract_ref="CC36-HTTP-WIRING CC36-HTTP-HANDLER FC36-HTTP-ENTRY"/>
+      <COVERED module_ref="MC36-IDENTITY" contract_ref="CC36-IDENTITY-VALIDATOR FC36-IDENTITY-VALIDATE"/>
+      <COVERED module_ref="MC36-AVAILABILITY" contract_ref="CC36-AVAILABILITY FC36-AVAILABILITY-GATE"/>
+      <COVERED module_ref="MC36-POLICY" contract_ref="CC36-POLICY FC36-POLICY-AUTHORIZE"/>
+      <COVERED module_ref="MC36-CONVERSATION" contract_ref="CC36-CONVERSATION FC36-CONVERSATION-DIRECT FC36-CONVERSATION-GROUP FC36-CONVERSATION-MEMBERSHIP FC36-CONVERSATION-OWNERSHIP"/>
+      <COVERED module_ref="MC36-MESSAGE" contract_ref="CC36-MESSAGE FC36-MESSAGE-SEND"/>
+      <COVERED module_ref="MC36-HISTORY-READ" contract_ref="CC36-HISTORY-READ FC36-HISTORY-PAGE FC36-HISTORY-READ-MARKER"/>
+      <COVERED module_ref="MC36-PERSISTENCE" contract_ref="CC36-PERSISTENCE"/>
+      <COVERED module_ref="MC36-SUBSCRIPTION" contract_ref="CC36-SUBSCRIPTION FC36-SUBSCRIPTION-REGISTER FC36-SUBSCRIPTION-REPLACE FC36-SUBSCRIPTION-REMOVE"/>
+      <COVERED module_ref="MC36-ENDPOINT-SECURITY" contract_ref="CC36-ENDPOINT-SECURITY FC36-ENDPOINT-VALIDATE FC36-ENDPOINT-CLIENT"/>
+      <COVERED module_ref="MC36-WAKETOKEN" contract_ref="CC36-WAKETOKEN FC36-WAKETOKEN-ISSUE FC36-WAKETOKEN-RESOLVE"/>
+      <COVERED module_ref="MC36-REALTIME" contract_ref="CC36-REALTIME FC36-WAKE-ENCRYPT FC36-REALTIME-NOTIFY"/>
+      <EXTERNAL_BOUNDARY module_ref="MC36-ANDROID-PUSH" contract_ref="CC36-ANDROID-PUSH-BOUNDARY" status="EXTERNAL_SOURCE_REQUIRED"/>
+      <EXTERNAL_BOUNDARY module_ref="MC36-NOTIFICATION-ACTIVATION" contract_ref="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" status="EXTERNAL_SOURCE_REQUIRED"/>
+    </MODULE_COVERAGE>
+    <UNRESOLVED_DECISIONS>
+      <DECISION id="CFC36-OPEN-001">Identify the authoritative provider for administrative Chat enabled/disabled state before implementing ChatStateReader.</DECISION>
+      <DECISION id="CFC36-OPEN-002">Specify exact HTTP method, path, request and response schema for UnifiedPush registration, replacement and removal.</DECISION>
+      <DECISION id="CFC36-OPEN-003">Specify exact protected HTTP method, path, request and response schema for wakeToken resolution.</DECISION>
+      <DECISION id="CFC36-OPEN-004">Resolve runtime configuration names and validation for the configured ntfy origin without exposing admin credentials.</DECISION>
+      <DECISION id="CFC36-OPEN-005">Inspect full DP36 transaction definitions and define final repository method granularity before implementation.</DECISION>
+      <DECISION id="CFC36-OPEN-006">Obtain the BFE Chat Android source repository to derive exact Kotlin class/function contracts for MC36-ANDROID-PUSH and MC36-NOTIFICATION-ACTIVATION.</DECISION>
+      <DECISION id="CFC36-OPEN-007">Specify exact error-code enum and HTTP status mapping for new availability, policy, subscription and token-resolution errors.</DECISION>
+      <DECISION id="CFC36-OPEN-008">Independent QA must validate each proposed signature against the complete approved DP36-002/MC36-002 graph and check all referenced IDs before Human Approval.</DECISION>
+    </UNRESOLVED_DECISIONS>
+  </TRACEABILITY_AND_GAPS>
+
+  <VERIFICATION_GATES id="CFC36-GATES">
+    <GATE id="CFC36-GATE-SOURCE-PROVENANCE" status="PASSED">Source signatures and source-file blob SHAs are pinned to commit 1ebf5ee97ed9a2d06f6a4bc901d2c9986b84f398. Approved upstream source identities are pinned above.</GATE>
+    <GATE id="CFC36-GATE-CONTRACT-COMPLETENESS" status="PENDING" refs="MC36-GRAPH MC36-INTERACTIONS DP36-002">Requires independent review of all proposed signatures, transaction semantics, dependency direction, route gaps, and external Android boundaries.</GATE>
+    <GATE id="CFC36-GATE-INDEPENDENT-QA" status="PENDING">Independent QA has not yet reviewed CFC36-001.</GATE>
+    <GATE id="CFC36-GATE-HUMAN-APPROVAL" status="PENDING">Project Owner approval is required after Independent QA passes.</GATE>
+    <GATE id="CFC36-GATE-IMPLEMENTATION" status="BLOCKED">Production implementation, tests, migrations and deployment are not authorized by this artifact.</GATE>
+  </VERIFICATION_GATES>
+</CLASS_FUNCTION_CONTRACTS>
