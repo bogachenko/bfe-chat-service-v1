@@ -5,6 +5,9 @@
   approval="PENDING"
   issue="36"
   revision="CFC36-001"
+  class_contract_count="14"
+  function_contract_count="30"
+  orchestrator_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6450202669"
   source_code_commit="1ebf5ee97ed9a2d06f6a4bc901d2c9986b84f398"
   module_contracts_revision="MC36-002"
   module_contracts_reviewed_commit="1512ef5e964f3561a9f65daa577dfdc8a6ca6e3f"
@@ -53,7 +56,7 @@
     <TYPE id="CFC36-T-WAKE-TOKEN" name="WakeToken" signature="type WakeToken string">Opaque, non-authorizing token. Do not log it, expose it in visible notification text, or use it as identity.</TYPE>
     <TYPE id="CFC36-T-OPERATION" name="Operation" signature="type Operation uint8">Closed set of internal protected Chat operations used by policy evaluation; these values are not an external API.<VALUES>OpenDirect, CreateGroup, Join, RemoveMember, TransferOwner, ChangeAdmin, RenameGroup, HideDirect, Leave, SendMessage, ReadHistory, MarkRead, CountUnread, RegisterSubscription, ReplaceSubscription, RemoveSubscription, ResolveWakeToken</VALUES></TYPE>
     <TYPE id="CFC36-T-ERROR" name="ContractError" signature="type ContractError struct { Code ErrorCode; Cause error }">Proposed typed internal error carrier. HTTP status mapping remains at the HTTP boundary; callers must not expose Cause or protected identifiers in error responses.</TYPE>
-    <TYPE id="CFC36-T-PUSH-SUBSCRIPTION" name="PushSubscription" signature="type PushSubscription struct { Endpoint string; Topic string; P256DH string; AuthSecret string }">Protected delivery destination and Web Push encryption material returned by the UnifiedPush registration flow. Never expose endpoint, topic or secrets to other accounts.</TYPE>
+    <TYPE id="CFC36-T-PUSH-SUBSCRIPTION" name="PushSubscription" signature="type PushSubscription struct { Endpoint string; Topic string; P256DH string; AuthSecret string }">Protected delivery destination and Web Push encryption material. Preserve Endpoint and Topic unchanged as the pair returned by ntfy UnifiedPush registration; do not derive Topic from Endpoint or select it independently. The approved sources do not define server-side proof that client-supplied values belong to the same registration; see CFC36-OPEN-011. Never expose endpoint, topic or secrets to other accounts.</TYPE>
     <TYPE id="CFC36-T-RFC8291-ENCRYPTOR" name="RFC8291WebPushEncryptor" signature="type RFC8291WebPushEncryptor struct { Random io.Reader }">Proposed implementation of the WebPushEncryptor interface using approved standard-library cryptographic primitives.</TYPE>
     <TYPE id="CFC36-T-HISTORY-SERVICE" name="HistoryReadService" signature="type HistoryReadService struct { Repository HistoryRepository; Policy PolicyAuthorizer }">Orchestrates current authorization and history/read-marker operations.</TYPE>
     <TYPE id="CFC36-T-WAKE-PAYLOAD" name="WakePayload" signature="type WakePayload struct { ProtocolVersion string; WakeToken WakeToken }">The complete application payload contains exactly protocol version and opaque wakeToken. The approved wire encoding/version value remains subject to the existing protocol decision and interoperability gate.</TYPE>
@@ -97,7 +100,7 @@
   </SUPPORTING_TYPES>
 
   <INTERFACE id="CFC36-I-WEBPUSH-ENCRYPTOR" name="WebPushEncryptor" signature="type WebPushEncryptor interface { Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error) }">Encryption boundary for the exact approved wake payload; no plaintext or secrets are logged.</INTERFACE>
-  <INTERFACE id="CFC36-I-NTFY-PUBLISHER" name="NtfyPublisher" signature="type NtfyPublisher interface { Publish(ctx context.Context, endpoint *url.URL, topic string, payload EncryptedWakePayload) error }">Outbound ntfy boundary. The destination must already have passed configured-origin validation and the client must reject redirects.</INTERFACE>
+  <INTERFACE id="CFC36-I-NTFY-PUBLISHER" name="NtfyPublisher" signature="type NtfyPublisher interface { Publish(ctx context.Context, endpoint *url.URL, topic string, payload EncryptedWakePayload) error }">Outbound ntfy boundary. Use Endpoint and Topic as the unchanged pair returned by ntfy UnifiedPush registration; do not derive Topic from Endpoint or select it independently. Server-side proof that the submitted pair belongs to the same registration remains unresolved in CFC36-OPEN-011. The endpoint must pass configured-origin validation and the client must reject redirects.</INTERFACE>
 
   <CLASS_CONTRACTS>
     
@@ -293,16 +296,16 @@
       <PROPOSED_SIGNATURE>func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, input PushSubscription) error</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext) error</PROPOSED_SIGNATURE>
       <RESPONSIBILITY>Register, replace and remove the authenticated account's UnifiedPush delivery destination and encryption material.</RESPONSIBILITY>
-      <PRECONDITION>Caller identity and DPoP are validated; Chat is enabled; ConfiguredOrigin is validated trusted configuration; endpoint passes origin/scheme validation; public key and auth secret are valid for the approved Web Push encryption flow.</PRECONDITION>
+      <PRECONDITION>Caller identity and DPoP are validated; Chat is enabled; ConfiguredOrigin is validated trusted configuration; endpoint passes origin/scheme validation; public key and auth secret are valid for the approved Web Push encryption flow. Endpoint and Topic are preserved as the pair returned by UnifiedPush registration; server-side proof of their binding remains unresolved in CFC36-OPEN-011.</PRECONDITION>
       <POSTCONDITION>Subscription state is stored as protected account data. A subscription grants no membership or history access. The endpoint and secrets are not returned to another account or logged.</POSTCONDITION>
       <FORBIDDEN>Accept registration while disabled; trust a client-selected arbitrary origin; expose ntfy admin credentials; use subscription possession as authorization.</FORBIDDEN>
       <INTENT>Manage the authenticated account's UnifiedPush destination as protected delivery data.</INTENT>
-      <INPUTS>Validated caller context, endpoint, topic and Web Push encryption material.</INPUTS>
+      <INPUTS>Validated caller context, the unchanged Endpoint/Topic pair returned by UnifiedPush registration, and Web Push encryption material.</INPUTS>
       <OUTPUTS>Registration/replacement/removal result or non-disclosing error.</OUTPUTS>
       <STATE_CHANGES>Only the authenticated account's subscription record.</STATE_CHANGES>
       <INVARIANTS>Subscription possession grants no membership/history access; only the configured HTTPS ntfy origin is accepted.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not create membership, grant history access, widen ntfy ACL or expose admin credentials.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Authenticate with session-bound DPoP, check availability and endpoint security before persistence.</BUSINESS_RULES>
+      <BUSINESS_RULES>Authenticate with session-bound DPoP, check availability and endpoint security before persistence. Preserve the registration-returned Endpoint/Topic pair; do not derive Topic from Endpoint or select it independently. Server-side proof of pair binding remains CFC36-OPEN-011.</BUSINESS_RULES>
       <TEST_PROPERTIES>Invalid/out-of-origin endpoint, disabled Chat and cross-account attempts never change another account's subscription.</TEST_PROPERTIES>
       <SIDE_EFFECTS>Protected subscription persistence only.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Invalid endpoint or disabled Chat produces no write; failed replacement preserves the previous valid record.</FAILURE_BEHAVIOR>
@@ -821,7 +824,7 @@
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REGISTER" name="SubscriptionService.Register" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) error">
-      <INPUTS>Authenticated caller context, UnifiedPush endpoint, p256dh public key and auth secret.</INPUTS><OUTPUTS>Success or non-disclosing validation/authorization/storage error.</OUTPUTS>
+      <INPUTS>Authenticated caller context, the unchanged Endpoint/Topic pair returned by UnifiedPush registration, p256dh public key and auth secret.</INPUTS><OUTPUTS>Success or non-disclosing validation/authorization/storage error.</OUTPUTS>
       <PRECONDITIONS>Caller has valid session-bound DPoP; Chat is enabled; endpoint origin and HTTPS are validated; encryption material is valid.</PRECONDITIONS>
       <POSTCONDITIONS>Protected subscription data is associated with the authenticated account. No membership or history rights are granted.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Invalid endpoint or disabled Chat results in no subscription write.</FAILURE_BEHAVIOR>
@@ -832,15 +835,15 @@
       <STATE_CHANGES>Create one protected subscription record for the caller.</STATE_CHANGES>
       <INVARIANTS>Only HTTPS endpoints at the configured ntfy origin are accepted.</INVARIANTS>
       <TEST_PROPERTIES>Verify disabled state and invalid/out-of-origin endpoint produce no write.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Registration is denied while Chat is disabled; endpoint must be HTTPS and match the configured ntfy origin.</BUSINESS_RULES>
+      <BUSINESS_RULES>Registration is denied while Chat is disabled; endpoint must be HTTPS and match the configured ntfy origin. Preserve the registration-returned Endpoint/Topic pair; do not derive Topic from Endpoint or select it independently. Server-side proof of pair binding remains CFC36-OPEN-011.</BUSINESS_RULES>
 
 
-      <TRACE refs="MC36-SUBSCRIPTION MC36-IDENTITY MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION DP36-TX-SUBSCRIPTION MC36-I-F02 MC36-I-F04 MC36-I-F08 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED"/>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-IDENTITY MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY DP36-TX-SUBSCRIPTION MC36-I-F02 MC36-I-F04 MC36-I-F08 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED"/>
       <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REPLACE" name="SubscriptionService.Replace" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, input PushSubscription) error">
-      <INPUTS>Authenticated caller context and replacement endpoint/encryption material.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
+      <INPUTS>Authenticated caller context, the unchanged replacement Endpoint/Topic pair returned by UnifiedPush registration, and replacement encryption material.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
       <PRECONDITIONS>Current identity and availability pass; new endpoint passes exact-origin validation.</PRECONDITIONS>
       <POSTCONDITIONS>Only the authenticated account's active subscription is replaced atomically; no other account's subscription is modified.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Invalid replacement preserves the existing valid subscription.</FAILURE_BEHAVIOR>
@@ -851,10 +854,10 @@
       <STATE_CHANGES>Replace one protected subscription record.</STATE_CHANGES>
       <INVARIANTS>Invalid replacement preserves the prior valid subscription.</INVARIANTS>
       <TEST_PROPERTIES>Verify invalid input leaves the previous subscription unchanged.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Replacement validates the new endpoint before writing and leaves the previous valid subscription intact on failure.</BUSINESS_RULES>
+      <BUSINESS_RULES>Replacement validates the new endpoint before writing and leaves the previous valid subscription intact on failure. Preserve the registration-returned Endpoint/Topic pair; do not derive Topic from Endpoint or select it independently. Server-side proof of pair binding remains CFC36-OPEN-011.</BUSINESS_RULES>
 
 
-      <TRACE refs="MC36-SUBSCRIPTION MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION TD36-REGISTRATION DP36-TX-SUBSCRIPTION MC36-I-F04 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED"/>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY DP36-TX-SUBSCRIPTION MC36-I-F04 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED"/>
       <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
     </FUNCTION_CONTRACT>
 
@@ -1039,6 +1042,9 @@
   </EXISTING_SYMBOL_DISPOSITION>
 
   <TRACEABILITY_AND_GAPS>
+    <RESOLVED_DECISIONS>
+      <DECISION id="CFC36-RESOLVED-012" status="RESOLVED" source_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6450202669" decision_owner="Engineering Orchestrator">The authoritative inventory is 14 CLASS_CONTRACT elements and 30 FUNCTION_CONTRACT elements. buildHandler is a function and remains FC36-HTTP-WIRING. No GRACE rule or approved upstream requirement imposes a 15/29 count; no artificial class is added.</DECISION>
+    </RESOLVED_DECISIONS>
     <MODULE_COVERAGE>
       <COVERED module_ref="MC36-HTTP" contract_ref="FC36-HTTP-WIRING CC36-HTTP-HANDLER FC36-HTTP-ENTRY"/>
       <COVERED module_ref="MC36-IDENTITY" contract_ref="CC36-IDENTITY-VALIDATOR FC36-IDENTITY-VALIDATE"/>
@@ -1056,18 +1062,17 @@
       <EXTERNAL_BOUNDARY module_ref="MC36-NOTIFICATION-ACTIVATION" contract_ref="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" status="EXTERNAL_SOURCE_REQUIRED"/>
     </MODULE_COVERAGE>
     <UNRESOLVED_DECISIONS>
-      <DECISION id="CFC36-OPEN-001" upstream_artifact="DevelopmentPlan.xml; Technology.xml">Identify the authoritative provider for administrative Chat enabled/disabled state before implementing ChatStateReader.</DECISION>
-      <DECISION id="CFC36-OPEN-002" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml">Specify exact HTTP method, path, request and response schema for UnifiedPush registration, replacement and removal.</DECISION>
-      <DECISION id="CFC36-OPEN-003" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml">Specify exact protected HTTP method, path, request and response schema for wakeToken resolution.</DECISION>
-      <DECISION id="CFC36-OPEN-004" upstream_artifact="Technology.xml; DevelopmentPlan.xml">Resolve runtime configuration names and validation for the configured ntfy origin without exposing admin credentials.</DECISION>
-      <DECISION id="CFC36-OPEN-005" upstream_artifact="DevelopmentPlan.xml">DP36-002 defines five transaction boundaries but not the concrete pgx adapter. Proposed repository method granularity is now stated in CFC36-I-CONVERSATION-TX and CC36-PERSISTENCE; Independent QA must verify each method against DP36-TX-MESSAGE, DP36-TX-MEMBERSHIP, DP36-TX-TOKEN, DP36-TX-READ-MARKER and DP36-TX-SUBSCRIPTION before implementation.</DECISION>
-      <DECISION id="CFC36-OPEN-006" source_required="BFE Chat Android source repository">Obtain the BFE Chat Android source repository to derive exact Kotlin class/function contracts for MC36-ANDROID-PUSH and MC36-NOTIFICATION-ACTIVATION.</DECISION>
-      <DECISION id="CFC36-OPEN-007" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml">Specify exact error-code enum and HTTP status mapping for new availability, policy, subscription and token-resolution errors.</DECISION>
-      <DECISION id="CFC36-OPEN-008">Independent QA must validate each proposed signature against the complete approved DP36-002/MC36-002 graph and check all referenced IDs before Human Approval.</DECISION>
-      <DECISION id="CFC36-OPEN-009" upstream_artifact="Technology.xml; DevelopmentPlan.xml">The approved sources require delivery failure to be recorded without rolling back committed messages but do not define a finite outbound ntfy HTTP timeout. Specify timeout/deadline behavior before implementation; do not invent a duration in this contract.</DECISION>
-      <DECISION id="CFC36-OPEN-010" upstream_artifact="DevelopmentPlan.xml">DP36-TX-MEMBERSHIP does not define transaction semantics for RenameGroup or HideDirect. Their function contracts no longer claim that boundary. Engineering Orchestrator must decide whether DP36-002 needs an approved update or whether another existing boundary covers these writes.</DECISION>
-      <DECISION id="CFC36-OPEN-011" upstream_artifact="Technology.xml; DevelopmentPlan.xml">PushSubscription and NtfyPublisher model both an endpoint URL and a separate Topic, while TD36-REGISTRATION specifies the endpoint and encryption material. Engineering Orchestrator must decide the canonical topic/endpoint representation and ensure the topic cannot diverge from the validated endpoint; no new wire field is assumed here.</DECISION>
-      <DECISION id="CFC36-OPEN-012">The initial inventory described 15 class and 29 function contracts. CC36-HTTP-WIRING was reclassified as FC36-HTTP-WIRING because its current and proposed signatures are functions, leaving 14 class and 30 function contracts. Engineering Orchestrator must confirm whether the requested 15/29 count is a binding artifact constraint or whether the semantically correct classification should remain.</DECISION>
+      <DECISION id="CFC36-OPEN-001" status="BLOCKER" upstream_artifact="DevelopmentPlan.xml; Technology.xml" upstream_refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE DP36-M-AVAILABILITY DP36-F08">Identify and document the authoritative provider for administrative Chat enabled/disabled state. REQ36-CHAT-STATE, INV36-CHAT-STATE, TD36-CHAT-STATE, DP36-M-AVAILABILITY and DP36-F08 define the required gate behavior but do not name its provider. Resolve in an approved Technology.xml or DevelopmentPlan.xml decision before implementing ChatStateReader.</DECISION>
+      <DECISION id="CFC36-OPEN-002" status="BLOCKER" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml" upstream_refs="REQ32-AUTH REQ36-NOTIFICATION DP36-M-HTTP DP36-M-SUBSCRIPTION DP36-F04 TD36-REGISTRATION">Specify exact protected HTTP method, path, request schema and response schema for UnifiedPush registration, replacement and removal. The approved requirements and DP36-M-HTTP/DP36-M-SUBSCRIPTION/DP36-F04 require the protected unversioned /conversations API surface but do not define these route contracts. Resolve in approved RequirementsAnalysis.xml or DevelopmentPlan.xml before implementation.</DECISION>
+      <DECISION id="CFC36-OPEN-003" status="BLOCKER" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml" upstream_refs="REQ32-AUTH REQ36-WAKE-TOKEN DP36-M-HTTP DP36-M-WAKETOKEN DP36-F05 DP36-D12 TD36-TOKEN">Specify the exact protected HTTP method, path, request schema and response schema for wakeToken resolution. REQ36-WAKE-TOKEN, TD36-TOKEN, DP36-M-HTTP, DP36-M-WAKETOKEN, DP36-F05 and DP36-D12 do not assign the route contract. Resolve in approved RequirementsAnalysis.xml or DevelopmentPlan.xml before implementation.</DECISION>
+      <DECISION id="CFC36-OPEN-004" status="BLOCKER" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="TECH36-NTFY-SERVER TD36-ENDPOINT-SECURITY TD36-NTFY-ACL DP36-M-ENDPOINT-SECURITY DP36-F04">Specify runtime configuration names and validation behavior for the configured ntfy origin. TD36-ENDPOINT-SECURITY and DP36-M-ENDPOINT-SECURITY require a trusted configured origin but do not define the configuration contract. Resolve in an approved Technology.xml or DevelopmentPlan.xml decision without exposing ntfy administrative credentials.</DECISION>
+      <DECISION id="CFC36-OPEN-005" status="QA_VERIFICATION" upstream_artifact="DevelopmentPlan.xml; Technology.xml" upstream_refs="TECH36-PGX DP36-TX-MESSAGE DP36-TX-MEMBERSHIP DP36-TX-TOKEN DP36-TX-READ-MARKER DP36-TX-SUBSCRIPTION">This is an implementation-level proposal, not an upstream architecture decision. The Developer may propose concrete pgx adapter/repository method granularity only within the five approved transaction boundaries listed in upstream_refs. Independent QA must verify the proposal against every listed boundary before implementation; this item does not authorize changes to those boundaries.</DECISION>
+      <DECISION id="CFC36-OPEN-006" status="BLOCKER" source_required="BFE Chat Android source repository" upstream_refs="DP36-M-ANDROID-PUSH DP36-M-NOTIFICATION-ACTIVATION MC36-ANDROID-PUSH MC36-NOTIFICATION-ACTIVATION">Provide the actual BFE Chat Android source repository and a revision from which exact Kotlin class/function contracts can be derived for MC36-ANDROID-PUSH and MC36-NOTIFICATION-ACTIVATION. No repository URL or source revision is established by the approved inputs; do not invent Kotlin signatures.</DECISION>
+      <DECISION id="CFC36-OPEN-007" status="BLOCKER" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml" upstream_refs="REQ32-API REQ32-AUTH REQ36-CHAT-STATE REQ36-WAKE-TOKEN REQ36-NOTIFICATION DP36-ERR-CHAT-DISABLED DP36-ERR-INVALID-ENDPOINT DP36-ERR-INVALID-TOKEN DP36-ERR-REVOKED-MEMBER DP36-ERR-PUSH-FAILURE">Specify the exact error-code enum and HTTP-status mapping for availability, policy, subscription and wakeToken-resolution failures. Existing failure paths define expected outcomes but do not establish the complete public mapping. Resolve in approved RequirementsAnalysis.xml or DevelopmentPlan.xml before implementation.</DECISION>
+      <DECISION id="CFC36-OPEN-008" status="QA_GATE" upstream_refs="DP36-F01 DP36-F02 DP36-F03 DP36-F04 DP36-F05 DP36-F06 DP36-F07 DP36-F08 MC36-I-F01 MC36-I-F02 MC36-I-F03 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F07 MC36-I-F08">Independent QA must validate every proposed signature against the complete pinned RA36-002, TECH36-001, DP36-002 and MC36-002 graph and check all referenced IDs. This is a QA gate, not a product decision; close it only after Independent QA reviews the exact CFC revision. Do not begin Independent QA while blocker decisions remain open.</DECISION>
+      <DECISION id="CFC36-OPEN-009" status="BLOCKER" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="TD36-DELIVERY-FAILURE DP36-M-REALTIME DP36-ERR-PUSH-FAILURE DP36-MT01 DP36-RISK-EXTERNAL-SIDE-EFFECT">TD36-DELIVERY-FAILURE requires recording delivery failure without rolling back a committed message, but neither it nor DP36-ERR-PUSH-FAILURE defines a finite outbound ntfy HTTP timeout/deadline policy. Decide timeout/deadline and cancellation behavior in the appropriate approved Technology.xml or DevelopmentPlan.xml artifact. Do not invent a duration in CFC.</DECISION>
+      <DECISION id="CFC36-OPEN-010" status="BLOCKER" upstream_artifact="DevelopmentPlan.xml" upstream_refs="REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP DP36-M-CONVERSATION DP36-F03 DP36-TX-MEMBERSHIP">DP36-TX-MEMBERSHIP does not define transaction semantics for RenameGroup or HideDirect. The requirements establish the relevant group, role, membership and visibility behavior, but the approved transaction set does not define the boundary for these writes. Update and approve DevelopmentPlan.xml to specify each operation's transaction semantics before CFC claims a transaction boundary for either function.</DECISION>
+      <DECISION id="CFC36-OPEN-011" status="BLOCKER" upstream_artifact="Technology.xml" upstream_refs="TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-REGISTRATION DP36-M-SUBSCRIPTION DP36-D07 DP36-F04">Preserve Endpoint and Topic as the unchanged pair returned by ntfy UnifiedPush registration; do not derive Topic from Endpoint or select it independently. TD36-NTFY-ACL requires using the endpoint and topic returned by registration, while TD36-ENDPOINT-SECURITY requires HTTPS, configured-origin validation and redirect rejection. The approved sources do not define how the server proves that client-supplied Endpoint and Topic belong to the same registration. Keep this decision open and add a specific approved Technology.xml decision defining that verification before implementation; do not invent a binding rule in CFC.</DECISION>
     </UNRESOLVED_DECISIONS>
   </TRACEABILITY_AND_GAPS>
 
