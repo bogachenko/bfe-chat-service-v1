@@ -79,7 +79,7 @@
         <RESPONSIBILITY>Evaluate current Chat availability, authenticated identity, current membership, role, membership visibility interval and per-message visibility on every protected operation, including token resolution and history retrieval.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not treat notification receipt, topic possession or token possession as authorization; does not reuse a prior authorization decision as a substitute for revalidation.</NON_RESPONSIBILITY>
       </MODULE>
-      <MODULE id="DP36-M-CONVERSATION" refs="REQ32-MODEL REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ32-PRESERVE">
+      <MODULE id="DP36-M-CONVERSATION" refs="REQ32-MODEL REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ32-PRESERVE DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-D14">
         <RESPONSIBILITY>Own direct/group domain behavior: stable conversation identity, concurrent-safe uniqueness of unordered direct pairs, group ownership and roles, membership addition/removal, bounded visibility intervals, leave/ownership-transfer rules and caller-only personal hide.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not validate external sessions, publish push events, or grant access to BFE Drive documents.</NON_RESPONSIBILITY>
       </MODULE>
@@ -91,7 +91,7 @@
         <RESPONSIBILITY>Provide cursor-based history and catch-up filtered by current authorization and membership visibility intervals; return document ID and title when present in the stored message context only alongside messages the caller may view; maintain monotonically increasing per-account/per-conversation read markers shared across devices.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not infer missed messages from push receipts, reveal messages or their document metadata outside the viewer's visibility intervals, copy document content, or grant BFE Drive document rights. BFE Drive remains responsible for document-access checks.</NON_RESPONSIBILITY>
       </MODULE>
-      <MODULE id="DP36-M-PERSISTENCE" refs="TECH36-POSTGRESQL TECH36-PGX TECH36-GOOSE TD36-DATA-AND-ACCESS REQ32-PRESERVE REQ32-DOCUMENT">
+      <MODULE id="DP36-M-PERSISTENCE" refs="TECH36-POSTGRESQL TECH36-PGX TECH36-GOOSE TD36-DATA-AND-ACCESS REQ32-PRESERVE REQ32-DOCUMENT DP36-TX-MESSAGE DP36-TX-DELIVERY-OUTBOX">
         <RESPONSIBILITY>Own PostgreSQL persistence boundaries for conversations, membership intervals, messages and their optional document ID/title metadata, idempotency records, read markers, protected Endpoint-only UnifiedPush subscription data, durable per-recipient delivery-outbox intents and wakeToken mappings. Persist no document content. The message transaction commits the outbox intent with the message and idempotency result; the worker claims and records delivery outcomes through short persistence transactions. Provide transaction and ordering boundaries used by domain modules.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not make authorization decisions independently of policy, migrate legacy production data, grant BFE Drive document rights, or make an external ntfy publish part of a PostgreSQL transaction.</NON_RESPONSIBILITY>
       </MODULE>
@@ -107,7 +107,7 @@
         <RESPONSIBILITY>Generate opaque tokens using the approved cryptographic random source, maintain a durable mapping from each issued token to its conversation while notifications may still be processed, and resolve the mapping repeatedly through the protected Chat API.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not consume a token on use, impose arbitrary fixed TTL, disclose conversation identity on failed resolution, or grant authorization based on token possession.</NON_RESPONSIBILITY>
       </MODULE>
-      <MODULE id="DP36-M-REALTIME" refs="REQ32-REALTIME REQ32-DOCUMENT REQ32-MEMBERSHIP REQ36-WAKE-TOKEN REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-TRANSPORT TD36-WEBPUSH TD36-PAYLOAD TD36-NTFY-ACL TD36-NTFY-HTTP TD36-DELIVERY-FAILURE TECH36-INTEROP-CHECK">
+      <MODULE id="DP36-M-REALTIME" refs="REQ32-REALTIME REQ32-DOCUMENT REQ32-MEMBERSHIP REQ36-WAKE-TOKEN REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-TRANSPORT TD36-WEBPUSH TD36-PAYLOAD TD36-NTFY-ACL TD36-NTFY-HTTP TD36-DELIVERY-FAILURE DP36-TX-DELIVERY-OUTBOX TECH36-INTEROP-CHECK">
         <RESPONSIBILITY>After message commit, process durable per-recipient delivery intents in a background worker; recheck current eligibility before each publish; ensure a durable token mapping exists before publication; encrypt the exact allowlisted payload consisting only of protocol version and opaque wakeToken with the approved RFC 8291 aes128gcm flow; publish through the complete Endpoint URL only; record terminal outcomes without secrets. The request path does not wait for network delivery, and no network I/O occurs inside a database transaction. Document metadata remains available through authorized history, not the wake payload.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not include message text, conversation/account identifiers, document IDs/titles or document content in the event; add any alternate realtime transport; expose ntfy administrator credentials; or treat successful publication as proof of access.</NON_RESPONSIBILITY>
         <DELIVERY_POLICY>Use approved TD36-NTFY-ACL: the publisher has anonymous write-only access to up*; the ntfy Android distributor uses a regular non-admin account with read-only access to up*. Do not widen anonymous permissions. Use required -ntfy-origin, separate from -public-origin, and the configured -ntfy-timeout (default 5s). Propagate worker-context cancellation and reject redirects. Recheck current recipient eligibility before initiating a publish; an event already in flight cannot be recalled, and subsequent token resolution must fail closed after revocation. Delivery outcomes are terminal in the first implementation; no automatic retries, and ambiguous outcomes are UNKNOWN.</DELIVERY_POLICY>
@@ -231,12 +231,14 @@
       <STATE_MODEL id="DP36-S-MESSAGE-DELIVERY" refs="REQ32-MESSAGE REQ32-REALTIME TD36-DELIVERY-FAILURE">
         <STATE id="DP36-S-MESSAGE-COMMITTED" name="COMMITTED">Message, idempotency result and per-recipient delivery-outbox intents are durable regardless of push outcome.</STATE>
         <STATE id="DP36-S-PUSH-QUEUED" name="PUSH_QUEUED">A committed per-recipient outbox intent awaits its single dispatch attempt.</STATE>
+        <STATE id="DP36-S-PUSH-SKIPPED" name="SKIPPED">The worker rechecked eligibility before publication and the recipient was no longer eligible; no HTTP request was made.</STATE>
         <STATE id="DP36-S-PUSH-ATTEMPTED" name="PUSH_ATTEMPTED">A worker durably claimed the intent before attempting external ntfy HTTP.</STATE>
         <STATE id="DP36-S-PUSH-FAILED" name="PUSH_FAILED">A conclusive delivery failure is terminal; the committed message remains available through authorized history.</STATE>
         <STATE id="DP36-S-PUSH-UNKNOWN" name="UNKNOWN">The delivery outcome is ambiguous or a claimed attempt was interrupted; this state is terminal and is never retried automatically.</STATE>
         <STATE id="DP36-S-PUSH-DELIVERED" name="PUSH_DELIVERED">ntfy accepted the request; this does not prove the recipient has history access.</STATE>
         <TRANSITION id="DP36-ST-PUSH-QUEUE" from="DP36-S-MESSAGE-COMMITTED" to="DP36-S-PUSH-QUEUED">The outbox intent commits atomically with the message.</TRANSITION>
         <TRANSITION id="DP36-ST-PUSH-ATTEMPT" from="DP36-S-PUSH-QUEUED" to="DP36-S-PUSH-ATTEMPTED">A background worker claims the intent after commit.</TRANSITION>
+        <TRANSITION id="DP36-ST-PUSH-SKIPPED" from="DP36-S-PUSH-QUEUED" to="DP36-S-PUSH-SKIPPED">Current eligibility is rechecked before any publication; an ineligible recipient is terminally skipped without HTTP.</TRANSITION>
         <TRANSITION id="DP36-ST-PUSH-FAIL" from="DP36-S-PUSH-ATTEMPTED" to="DP36-S-PUSH-FAILED">A conclusive failure is recorded without rolling back message state and without retry.</TRANSITION>
         <TRANSITION id="DP36-ST-PUSH-UNKNOWN" from="DP36-S-PUSH-ATTEMPTED" to="DP36-S-PUSH-UNKNOWN">Timeout, cancellation, transport ambiguity or interrupted claim is terminal UNKNOWN and is not retried.</TRANSITION>
         <TRANSITION id="DP36-ST-PUSH-SUCCESS" from="DP36-S-PUSH-ATTEMPTED" to="DP36-S-PUSH-DELIVERED">ntfy accepts the encrypted opaque event; authorization still occurs only through Chat API.</TRANSITION>
@@ -303,7 +305,7 @@
     </TRANSACTION_BOUNDARIES>
 
     <FAILURE_PATHS id="DP36-FAILURE-PATHS">
-      <FAILURE_PATH id="DP36-ERR-PUSH-FAILURE" refs="REQ32-REALTIME TD36-DELIVERY-FAILURE DP36-TX-MESSAGE">
+      <FAILURE_PATH id="DP36-ERR-PUSH-FAILURE" refs="REQ32-REALTIME TD36-DELIVERY-FAILURE DP36-TX-MESSAGE DP36-TX-DELIVERY-OUTBOX">
         <TRIGGER>Message commit succeeds but ntfy publication fails or times out.</TRIGGER>
         <PATH>Keep committed message, idempotency result and durable per-recipient outbox intent; record a terminal outcome without tokens, Endpoint capability URLs or payload secrets; do not roll back. Timeout, cancellation, transport ambiguity or interrupted claimed attempt is UNKNOWN and is never automatically retried. A conclusive failure is also terminal in the first implementation. Client can recover through authenticated history.</PATH>
         <ACCESS_CHECKS>History recovery independently checks current session, Chat state, membership and message visibility.</ACCESS_CHECKS>
