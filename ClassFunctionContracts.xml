@@ -450,6 +450,8 @@
       <STATE_CHANGES>No direct domain-state change; delegated services may change state only after all gates pass.</STATE_CHANGES>
       <INVARIANTS>Rejected or malformed requests produce no protected domain mutation; failures disclose no protected data.</INVARIANTS>
       <TEST_PROPERTIES>Verify malformed, oversized, unauthenticated, disabled and unauthorized requests have no protected mutation and return non-disclosing responses.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Only the unversioned /conversations resource tree is valid; validate request shape and limits before protected side effects.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-HTTP DP36-F01 DP36-F05 REQ32-API REQ32-LIMITS"/>
     </FUNCTION_CONTRACT>
@@ -467,6 +469,8 @@
       <STATE_CHANGES>No Chat state changes.</STATE_CHANGES>
       <INVARIANTS>Every protected request requires current valid proof bound to that request; invalid proof never yields a caller.</INVARIANTS>
       <TEST_PROPERTIES>Verify missing, invalid, replayed, misbound proof and unavailable Internal Auth fail closed.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Every protected request requires valid session-bound, request-bound DPoP through Internal Auth over UDS.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-IDENTITY DP36-F01 DP36-F04 DP36-F05 REQ32-AUTH INV32-DPOP TECH36-INTERNAL-AUTH"/>
     </FUNCTION_CONTRACT>
@@ -483,6 +487,8 @@
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>Unknown availability is never treated as enabled.</INVARIANTS>
       <TEST_PROPERTIES>Verify enabled allows the gate; disabled and read failure deny it.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Disabled or unknown Chat state denies protected operations, history, wakeToken resolution and new registrations.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE"/>
     </FUNCTION_CONTRACT>
@@ -499,6 +505,8 @@
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>Every decision uses current state; membership visibility boundaries apply to each operation.</INVARIANTS>
       <TEST_PROPERTIES>Verify revoked membership, insufficient role, hidden-gap ordinal and disabled Chat deny access.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Authorization uses current identity, availability, membership, role and visibility; token or push possession grants no access.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-POLICY MC36-CONVERSATION MC36-AVAILABILITY DP36-D04 DP36-F01 DP36-F03 DP36-F05 DP36-F06 DP36-F07 DP36-F08 REQ32-AUTH REQ32-MEMBERSHIP REQ32-ROLES REQ32-HISTORY REQ36-WAKE-TOKEN REQ36-CHAT-STATE"/>
     </FUNCTION_CONTRACT>
@@ -516,6 +524,8 @@
       <STATE_CHANGES>Create conversation and membership state only when required.</STATE_CHANGES>
       <INVARIANTS>Self-direct is rejected and concurrent requests for one unordered pair yield one stable identity.</INVARIANTS>
       <TEST_PROPERTIES>Verify self-direct rejection and concurrent duplicate creation.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Accounts must be distinct; concurrent creation for the same unordered pair returns one stable direct conversation.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION DP36-F01 REQ32-DIRECT REQ32-MODEL DP36-TX-MEMBERSHIP"/>
       <LEGACY_WARNING>Current implementation is not approved as target persistence until its schema and transaction behavior are independently mapped.</LEGACY_WARNING>
@@ -534,6 +544,8 @@
       <STATE_CHANGES>Create conversation, owner and initial member rows atomically.</STATE_CHANGES>
       <INVARIANTS>Creator is the sole owner; at most 100 members including owner; group name is at most 256 UTF-8 bytes.</INVARIANTS>
       <TEST_PROPERTIES>Verify invalid limits create no partial group and exactly one owner is created.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Group name is non-empty and at most 256 UTF-8 bytes; at most 100 members including owner; creator is sole owner.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION DP36-F01 REQ32-GROUP REQ32-LIMITS REQ32-ROLES DP36-TX-MEMBERSHIP"/>
       <LEGACY_WARNING>Current implementation is not approved as target persistence until its schema and transaction behavior are independently mapped.</LEGACY_WARNING>
@@ -553,6 +565,8 @@
       <STATE_CHANGES>Add membership and open a new visibility interval atomically.</STATE_CHANGES>
       <INVARIANTS>Only owner may add an admin; historical visibility gaps stay closed.</INVARIANTS>
       <TEST_PROPERTIES>Verify role matrix, duplicate/conflicting join and interval boundaries.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Owner or admin may add a member; only owner may add an admin; each join opens a new visibility interval.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F03 DP36-F07 REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP DP36-TX-MEMBERSHIP"/>
       <LEGACY_WARNING>The legacy epoch return value is not part of the proposed service API; preserve it only if Independent QA finds a normative consumer in the approved graph.</LEGACY_WARNING>
@@ -572,6 +586,8 @@
       <STATE_CHANGES>Remove membership from current access and close its interval atomically.</STATE_CHANGES>
       <INVARIANTS>Subsequent protected operations and new wake publications exclude the removed member.</INVARIANTS>
       <TEST_PROPERTIES>Verify forbidden role transitions and that old tokens do not restore access.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Owner cannot be removed; admin may remove only a member; removal closes the interval and blocks subsequent access.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE MC36-REALTIME MC36-WAKETOKEN DP36-F03 DP36-F07 REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ36-WAKE-TOKEN DP36-TX-MEMBERSHIP"/>
       <LEGACY_WARNING>The legacy epoch return value is not part of the proposed service API; preserve it only if Independent QA finds a normative consumer in the approved graph.</LEGACY_WARNING>
@@ -591,6 +607,8 @@
       <STATE_CHANGES>Update owner/member roles in one transaction.</STATE_CHANGES>
       <INVARIANTS>Exactly one current group owner remains after success.</INVARIANTS>
       <TEST_PROPERTIES>Verify non-owner, self-transfer and non-member successor are rejected without writes.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Only the current owner may transfer to another current member; exactly one owner remains.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F03 REQ32-GROUP REQ32-ROLES DP36-TX-MEMBERSHIP"/>
       <LEGACY_WARNING>Legacy schema and transaction behavior are not approved for direct reuse.</LEGACY_WARNING>
@@ -609,6 +627,8 @@
       <STATE_CHANGES>Update one target role atomically.</STATE_CHANGES>
       <INVARIANTS>The owner role remains unique and unchanged.</INVARIANTS>
       <TEST_PROPERTIES>Verify only the owner can change admin status and the owner cannot be targeted.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Only owner may promote/demote a current non-owner; admins cannot appoint admins.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F03 REQ32-GROUP REQ32-ROLES DP36-TX-MEMBERSHIP"/>
       <LEGACY_WARNING>Legacy schema and transaction behavior are not approved for direct reuse.</LEGACY_WARNING>
@@ -628,6 +648,8 @@
       <STATE_CHANGES>Update the group name only.</STATE_CHANGES>
       <INVARIANTS>Name is non-empty and at most 256 UTF-8 bytes.</INVARIANTS>
       <TEST_PROPERTIES>Verify owner/admin success and invalid name, wrong kind or unauthorized rejection.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Only owner/admin may rename a group; name is non-empty and at most 256 UTF-8 bytes.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F03 REQ32-GROUP REQ32-ROLES REQ32-LIMITS DP36-TX-MEMBERSHIP"/>
     </FUNCTION_CONTRACT>
@@ -645,6 +667,8 @@
       <STATE_CHANGES>Update the caller's personal hide state only.</STATE_CHANGES>
       <INVARIANTS>Personal hide has no effect on peer access or message history.</INVARIANTS>
       <TEST_PROPERTIES>Verify caller-only effect and rejection for non-direct or non-member callers.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Personal hide affects only the caller's visibility, not peer access, messages or conversation identity.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE DP36-F01 REQ32-DIRECT DP36-TX-MEMBERSHIP"/>
     </FUNCTION_CONTRACT>
@@ -661,6 +685,8 @@
       <STATE_CHANGES>Close caller membership and visibility interval atomically.</STATE_CHANGES>
       <INVARIANTS>Exactly one owner remains; the last owner cannot leave; rejoin cannot reveal gap messages.</INVARIANTS>
       <TEST_PROPERTIES>Verify ordinary member leave, owner transfer prerequisite and last-owner rejection.</TEST_PROPERTIES>
+      <BUSINESS_RULES>A group owner must transfer ownership to another current member before leaving; the last owner cannot leave.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-CONVERSATION MC36-POLICY MC36-PERSISTENCE MC36-REALTIME MC36-WAKETOKEN DP36-F03 DP36-F07 REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP DP36-TX-MEMBERSHIP"/>
       <DECISION_NOTE>No Store.Leave symbol exists at the pinned source commit. This is a proposed service operation derived from REQ32-GROUP and MC36-CONVERSATION, not a claim about current implementation.</DECISION_NOTE>
@@ -677,6 +703,8 @@
       <STATE_CHANGES>Commit message/order/idempotency first; attempt realtime notification only for a new logical message.</STATE_CHANGES>
       <INVARIANTS>Same-key identical replay returns original result; conflicting replay conflicts; payload carries only version and wakeToken.</INVARIANTS>
       <TEST_PROPERTIES>Verify limits, idempotent replay, conflict, commit-before-publish and delivery-failure recovery.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Text maximum is 16384 UTF-8 bytes and JSON body maximum is 65536 bytes; identical idempotency replay returns the original result and conflicting replay conflicts.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-MESSAGE MC36-PERSISTENCE MC36-REALTIME DP36-F02 DP36-D09 REQ32-MESSAGE REQ32-DOCUMENT REQ32-LIMITS REQ32-REALTIME TD36-DELIVERY-FAILURE DP36-TX-MESSAGE"/>
     </FUNCTION_CONTRACT>
@@ -694,6 +722,8 @@
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>The result reflects current persisted membership state.</INVARIANTS>
       <TEST_PROPERTIES>Verify active, inactive, absent and persistence-failure cases are distinguishable to policy.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Membership role, active status and visibility are read from authoritative current state.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-POLICY MC36-CONVERSATION MC36-PERSISTENCE DP36-D04 REQ32-MEMBERSHIP REQ32-ROLES"/>
     </FUNCTION_CONTRACT>
@@ -710,6 +740,8 @@
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>Messages outside the caller's interval remain invisible, including messages in a rejoin gap.</INVARIANTS>
       <TEST_PROPERTIES>Verify lower and upper interval boundaries and unavailable state fail closed.</TEST_PROPERTIES>
+      <BUSINESS_RULES>A message is visible only when its ordinal lies within the caller's membership visibility interval.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-POLICY MC36-CONVERSATION MC36-HISTORY-READ MC36-PERSISTENCE DP36-D04 DP36-F06 REQ32-MEMBERSHIP REQ32-HISTORY"/>
     </FUNCTION_CONTRACT>
@@ -726,6 +758,8 @@
       <STATE_CHANGES>Commit message, order and idempotency result together.</STATE_CHANGES>
       <INVARIANTS>A failed transaction leaves no partial message; replay cannot create a second logical message.</INVARIANTS>
       <TEST_PROPERTIES>Verify concurrent same-key requests, identical replay, conflicting replay and rollback.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Message, conversation order and idempotency result commit atomically; no publication occurs before commit.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-MESSAGE MC36-PERSISTENCE DP36-F02 REQ32-MESSAGE REQ32-LIMITS DP36-TX-MESSAGE"/>
     </FUNCTION_CONTRACT>
@@ -741,6 +775,8 @@
       <STATE_CHANGES>Read-only query.</STATE_CHANGES>
       <INVARIANTS>Only messages within current membership visibility intervals are returned; page limit is at most 100 with default 50.</INVARIANTS>
       <TEST_PROPERTIES>Verify pagination, limits, rejoin gaps and hidden-message metadata filtering.</TEST_PROPERTIES>
+      <BUSINESS_RULES>History uses stable cursor pagination, default limit 50 and maximum 100, filtered by current membership visibility.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-HISTORY-READ MC36-POLICY MC36-PERSISTENCE DP36-F05 DP36-F06 REQ32-HISTORY REQ32-DOCUMENT REQ32-MEMBERSHIP REQ32-AUTH"/>
     </FUNCTION_CONTRACT>
@@ -759,6 +795,8 @@
       <STATE_CHANGES>Read-only query.</STATE_CHANGES>
       <INVARIANTS>Only authorized messages sent by other accounts contribute to the count.</INVARIANTS>
       <TEST_PROPERTIES>Verify own messages, already-read messages and messages outside membership intervals are excluded.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Unread counts include only other users' messages after the caller's marker and within current visibility intervals.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-HISTORY-READ MC36-POLICY MC36-PERSISTENCE DP36-F06 REQ32-READ REQ32-MEMBERSHIP DP36-TX-READ-MARKER"/>
     </FUNCTION_CONTRACT>
@@ -774,6 +812,8 @@
       <STATE_CHANGES>Advance one account/conversation marker monotonically.</STATE_CHANGES>
       <INVARIANTS>Read marker never decreases and only the caller's marker changes.</INVARIANTS>
       <TEST_PROPERTIES>Verify monotonic concurrent updates, invalid ordinals and cross-account isolation.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Read markers are monotonic per account and conversation and may advance only for the authenticated caller.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-HISTORY-READ MC36-PERSISTENCE DP36-F06 REQ32-READ REQ32-MEMBERSHIP DP36-TX-READ-MARKER"/>
     </FUNCTION_CONTRACT>
@@ -790,6 +830,8 @@
       <STATE_CHANGES>Create one protected subscription record for the caller.</STATE_CHANGES>
       <INVARIANTS>Only HTTPS endpoints at the configured ntfy origin are accepted.</INVARIANTS>
       <TEST_PROPERTIES>Verify disabled state and invalid/out-of-origin endpoint produce no write.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Registration is denied while Chat is disabled; endpoint must be HTTPS and match the configured ntfy origin.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-SUBSCRIPTION MC36-IDENTITY MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION DP36-TX-SUBSCRIPTION"/>
       <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
@@ -807,6 +849,8 @@
       <STATE_CHANGES>Replace one protected subscription record.</STATE_CHANGES>
       <INVARIANTS>Invalid replacement preserves the prior valid subscription.</INVARIANTS>
       <TEST_PROPERTIES>Verify invalid input leaves the previous subscription unchanged.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Replacement validates the new endpoint before writing and leaves the previous valid subscription intact on failure.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-SUBSCRIPTION MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION TD36-REGISTRATION DP36-TX-SUBSCRIPTION"/>
       <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
@@ -824,6 +868,8 @@
       <STATE_CHANGES>Delete the caller's protected subscription record.</STATE_CHANGES>
       <INVARIANTS>Subscription removal does not revoke or grant Chat membership.</INVARIANTS>
       <TEST_PROPERTIES>Verify only the caller's record is deleted.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Removal affects only the authenticated account's subscription and does not change Chat membership or history rights.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-SUBSCRIPTION MC36-PERSISTENCE DP36-F04 REQ32-AUTH TD36-REGISTRATION DP36-TX-SUBSCRIPTION"/>
       <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
@@ -841,6 +887,8 @@
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>Invalid scheme, origin or URL is rejected before persistence or outbound use.</INVARIANTS>
       <TEST_PROPERTIES>Verify arbitrary hosts, non-HTTPS and malformed endpoints are rejected.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Only HTTPS endpoints matching the exact configured ntfy origin are accepted.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-ENDPOINT-SECURITY MC36-SUBSCRIPTION DP36-F04 REQ32-ISOLATION TD36-ENDPOINT-SECURITY"/>
     </FUNCTION_CONTRACT>
@@ -857,6 +905,8 @@
       <STATE_CHANGES>No state changes at construction.</STATE_CHANGES>
       <INVARIANTS>Redirects cannot move an outbound request to an unapproved origin.</INVARIANTS>
       <TEST_PROPERTIES>Verify redirect responses are returned as errors and not followed.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Redirects are rejected and never followed to another destination.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-ENDPOINT-SECURITY MC36-REALTIME DP36-F04 REQ32-ISOLATION TD36-ENDPOINT-SECURITY"/>
     </FUNCTION_CONTRACT>
@@ -873,6 +923,8 @@
       <STATE_CHANGES>Create one durable token mapping.</STATE_CHANGES>
       <INVARIANTS>No arbitrary fixed TTL; no token is returned if mapping persistence fails.</INVARIANTS>
       <TEST_PROPERTIES>Verify persistence failure prevents publication-ready token output and token values are opaque.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Token mapping is durable before publication; no arbitrary fixed TTL is assigned.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-WAKETOKEN MC36-PERSISTENCE MC36-REALTIME DP36-F02 DP36-F05 REQ36-WAKE-TOKEN INV36-WAKE-TOKEN TD36-TOKEN DP36-TX-TOKEN"/>
     </FUNCTION_CONTRACT>
@@ -889,6 +941,8 @@
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
       <INVARIANTS>Every API resolution independently checks availability, identity, membership and visibility.</INVARIANTS>
       <TEST_PROPERTIES>Verify repeated resolution works and revoked/disabled access fails without disclosure.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Resolution is repeatable and non-consuming; each protected request rechecks identity, availability, membership and visibility.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-WAKETOKEN MC36-POLICY MC36-AVAILABILITY DP36-D12 DP36-F05 DP36-F07 DP36-F08 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN"/>
       <ROUTE_STATUS>Exact protected HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
@@ -906,6 +960,8 @@
       <STATE_CHANGES>Cryptographic computation only.</STATE_CHANGES>
       <INVARIANTS>Application payload contains exactly protocol version and opaque wakeToken.</INVARIANTS>
       <TEST_PROPERTIES>Verify payload allowlist and reject invalid key material without leaking secrets.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Encrypted application payload contains exactly protocol version and opaque wakeToken using RFC 8291 aes128gcm.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-REALTIME MC36-ANDROID-PUSH DP36-F02 REQ32-REALTIME REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-WEBPUSH TD36-PAYLOAD"/>
     </FUNCTION_CONTRACT>
@@ -922,6 +978,8 @@
       <STATE_CHANGES>Read recipient/subscription state, persist token/delivery outcome, and make validated outbound HTTPS requests.</STATE_CHANGES>
       <INVARIANTS>Only version and opaque wakeToken are in the encrypted payload; history remains authoritative.</INVARIANTS>
       <TEST_PROPERTIES>Verify sender exclusion, removal race, replay suppression, endpoint validation and failure recovery.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Publish only after commit to currently eligible recipients excluding sender; delivery failure never rolls back history and replay emits no duplicate logical notification.</BUSINESS_RULES>
+
 
       <TRACE refs="MC36-REALTIME MC36-PERSISTENCE MC36-WAKETOKEN MC36-ENDPOINT-SECURITY DP36-D02 DP36-D09 DP36-F02 DP36-F07 DP36-F08 REQ32-REALTIME REQ32-DOCUMENT REQ32-MEMBERSHIP REQ36-WAKE-TOKEN INV36-OPAQUE-WAKE INV36-WAKE-TOKEN TD36-NTFY-ACL TD36-DELIVERY-FAILURE TECH36-INTEROP-CHECK"/>
     </FUNCTION_CONTRACT>
