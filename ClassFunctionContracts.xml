@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CLASS_FUNCTION_CONTRACTS
-  id="CFC36-002"
+  id="CFC36-003"
   status="PROPOSED"
   approval="PENDING"
   issue="36"
-  revision="CFC36-002"
+  revision="CFC36-003"
   class_contract_count="14"
   function_contract_count="31"
   orchestrator_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6451854447"
+  project_owner_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702"
   source_code_commit="1ebf5ee97ed9a2d06f6a4bc901d2c9986b84f398"
   module_contracts_revision="MC36-002"
   module_contracts_reviewed_commit="1512ef5e964f3561a9f65daa577dfdc8a6ca6e3f"
   module_contracts_blob_sha="8e306c485b864a2b55bdebf09448175ad499b76a"
-  architecture_revision="DP36-003"
-  architecture_commit="93c54ad65fc4e71996f9652ef4ab0d8f2d632f36"
-  architecture_blob_sha="cb4541a1bcbbd5c1807ffceb48c0fe127ca5353e"
+  architecture_revision="DP36-004"
+  architecture_commit="1c658b0fc8ddb42d9af093b22dfd286a02a5675d"
+  architecture_blob_sha="34026f25cd3131ac672662a3b4d8001c76be91b1"
   requirements_revision="RA36-002"
   requirements_blob_sha="646f1551919c50b7c9b23044d805aa1f4bb77d59"
-  technology_revision="TECH36-002"
-  technology_commit="287516841a1078584cee8d91a533f4305d751ae8"
-  technology_blob_sha="8c7c223264a41406e970030cc691a42f13aed415">
+  technology_revision="TECH36-003"
+  technology_commit="1c658b0fc8ddb42d9af093b22dfd286a02a5675d"
+  technology_blob_sha="235e6b112122cab2685da3f6cfd3902e63b229bf">
 
-  <PURPOSE>Define proposed class and function contracts for Issue #36 from the pinned source-code audit, MC36-002 module semantics, and Project Owner-approved decisions represented by proposed TECH36-002 and DP36-003. Those exact artifact revisions remain PROPOSED/PENDING; this CFC revision does not claim Human Approval or runtime interoperability.</PURPOSE>
+  <PURPOSE>Define proposed class and function contracts for Issue #36 from the pinned source-code audit, MC36-002 module semantics, and Project Owner-approved decisions represented by proposed TECH36-003 and DP36-004. Those exact artifact revisions remain PROPOSED/PENDING; this CFC revision does not claim Human Approval or runtime interoperability.</PURPOSE>
 
   <NORMATIVE_BOUNDARIES>
-    <RULE>RequirementsAnalysis.xml and Contracts.xml remain unchanged. TECH36-002 and DP36-003 encode the Project Owner-approved decisions for OPEN-004, OPEN-009, OPEN-010 and OPEN-011, but these artifact revisions remain PROPOSED/PENDING until their own gates pass. MC36-002 remains the pinned module/inter-module baseline.</RULE>
+    <RULE>RequirementsAnalysis.xml and Contracts.xml remain unchanged. TECH36-003 and DP36-004 encode the current Project Owner decisions, preserve OPEN-004, OPEN-009, OPEN-010 and OPEN-011, and add the Chat runtime flag, wakeToken route, error map, and account-owned subscription model. These artifact revisions remain PROPOSED/PENDING until their own gates pass. MC36-002 remains the pinned module/inter-module baseline.</RULE>
     <RULE>Historical FC32-* and CC32-* contracts are not approval for Issue 36 and are not copied as target contracts.</RULE>
     <RULE>All proposed symbols and the durable delivery-outbox design are design-only. This artifact does not authorize production code, migrations, tests, deployment, merge, or release.</RULE>
     <RULE>No HTTP path or method is assigned for UnifiedPush registration or wakeToken resolution because the approved sources do not specify their exact route mapping. Both remain within the protected unversioned /conversations API surface; route mapping requires a separate contract decision before implementation.</RULE>
@@ -75,14 +76,16 @@
     <TYPE id="CFC36-T-HISTORY-ITEM" name="HistoryItem" signature="type HistoryItem struct { ID string; Sender AccountID; Ordinal int64; Text string; DocumentID *string; DocumentTitle *string }">Visible message and optional stored document metadata; never document content.</TYPE>
     <TYPE id="CFC36-T-NEW-MESSAGE" name="NewMessage" signature="type NewMessage struct { Conversation ConversationID; Sender AccountID; Text string; IdempotencyKey string; DocumentID *string; DocumentTitle *string }">Persistence input for a new logical message after caller and policy validation.</TYPE>
     <TYPE id="CFC36-T-IDEMPOTENCY-KEY" name="IdempotencyKey" signature="type IdempotencyKey struct { Conversation ConversationID; Sender AccountID; Value string }">Idempotency identity scoped to the conversation and authenticated sender.</TYPE>
-    <TYPE id="CFC36-T-RECIPIENT" name="Recipient" signature="type Recipient struct { Account AccountID; Subscription PushSubscription }">Candidate active recipient plus validated delivery destination. Eligibility must be rechecked before publication.</TYPE>
-    <TYPE id="CFC36-T-COMMITTED-MESSAGE" name="CommittedMessage" signature="type CommittedMessage struct { Conversation ConversationID; Sender AccountID; MessageID string; Ordinal int64; Replayed bool }">Post-commit event; it carries no message body or document metadata for push publication. Durable per-recipient outbox intents are written in the message transaction and exist only for a new logical message.</TYPE>
-    <TYPE id="CFC36-T-DELIVERY-JOB" name="DeliveryJob" signature="type DeliveryJob struct { ID string; Event CommittedMessage; Recipient AccountID }">One durable per-recipient outbox intent. The worker claims it before network I/O, rechecks current recipient eligibility and records one terminal outcome. A claimed attempt is never automatically retried.</TYPE>
+    <TYPE id="CFC36-T-SUBSCRIPTION-ID" name="SubscriptionID" signature="type SubscriptionID string">Opaque identifier for one account-owned push-subscription record. It is not a device identifier, credential or authorization capability.</TYPE>
+    <TYPE id="CFC36-T-RECIPIENT" name="Recipient" signature="type Recipient struct { Account AccountID; SubscriptionID SubscriptionID; Subscription PushSubscription }">One eligible account-owned subscription delivery target. One AccountID may have an unbounded number of subscription records; eligibility is rechecked before publication.</TYPE>
+    <TYPE id="CFC36-T-COMMITTED-MESSAGE" name="CommittedMessage" signature="type CommittedMessage struct { Conversation ConversationID; Sender AccountID; MessageID string; Ordinal int64; Replayed bool }">Post-commit event; it carries no message body or document metadata for push publication. Durable per-subscription outbox intents are written in the message transaction and exist only for a new logical message.</TYPE>
+    <TYPE id="CFC36-T-DELIVERY-JOB" name="DeliveryJob" signature="type DeliveryJob struct { ID string; Event CommittedMessage; Recipient AccountID; SubscriptionID SubscriptionID }">One durable per-subscription outbox intent. The worker claims it before network I/O, rechecks current recipient and subscription eligibility and records one terminal outcome. A claimed attempt is never automatically retried.</TYPE>
     <TYPE id="CFC36-T-NTFY-RUNTIME-CONFIG" name="NtfyRuntimeConfig" signature="type NtfyRuntimeConfig struct { Origin *url.URL; HTTPTimeout time.Duration }">Validated trusted configuration populated from required -ntfy-origin and -ntfy-timeout, which defaults to 5s. Origin is independent of -public-origin; timeout must be positive.</TYPE>
-    <TYPE id="CFC36-T-ERROR-CODE" name="ErrorCode" signature="type ErrorCode string">Proposed internal error category. Concrete values and HTTP status mapping remain an explicit unresolved contract decision.</TYPE>
+    <TYPE id="CFC36-T-CHAT-RUNTIME-CONFIG" name="ChatRuntimeConfig" signature="type ChatRuntimeConfig struct { Enabled bool }">Validated -chat-enabled flag; defaults to false, is immutable for the process lifetime, and changes only after server restart.</TYPE>
+    <TYPE id="CFC36-T-ERROR-CODE" name="ErrorCode" signature="type ErrorCode string">Public error codes and HTTP statuses are defined by DP36-HTTP-ERROR-MAPPING: AUTH_INVALID/401, AUTH_UNAVAILABLE/503, CHAT_DISABLED/503, VALIDATION_ERROR/400, FORBIDDEN/403, NOT_FOUND/404, CONFLICT_409/409, METHOD_NOT_ALLOWED/405, STORAGE_UNAVAILABLE/503, INTERNAL_ERROR/500.</TYPE>
 
     <INTERFACE id="CFC36-I-AVAILABILITY-CHECKER" name="AvailabilityChecker" signature="type AvailabilityChecker interface { RequireEnabled(ctx context.Context) error }"/>
-    <INTERFACE id="CFC36-I-CHAT-STATE-READER" name="ChatStateReader" signature="type ChatStateReader interface { ChatEnabled(ctx context.Context) (bool, error) }"/>
+
     <INTERFACE id="CFC36-I-POLICY-AUTHORIZER" name="PolicyAuthorizer" signature="type PolicyAuthorizer interface { Authorize(ctx context.Context, in AuthorizationInput) error }"/>
     <INTERFACE id="CFC36-I-CONVERSATION-POLICY-READER" name="ConversationPolicyReader" signature="type ConversationPolicyReader interface { CurrentMembership(ctx context.Context, conversation ConversationID, account AccountID) (MembershipState, error); MessageVisible(ctx context.Context, conversation ConversationID, account AccountID, ordinal int64) (bool, error) }"/>
     <INTERFACE id="CFC36-I-CONVERSATION-OPERATIONS" name="ConversationOperations" signature="type ConversationOperations interface { OpenDirect(ctx context.Context, caller CallerContext, peer AccountID) (ConversationID, error); CreateGroup(ctx context.Context, caller CallerContext, name string, members []AccountID) (ConversationID, error); Join(ctx context.Context, caller CallerContext, conversation ConversationID, target AccountID, role string) error; RemoveMember(ctx context.Context, caller CallerContext, conversation ConversationID, target AccountID) error; TransferOwner(ctx context.Context, caller CallerContext, conversation ConversationID, successor AccountID) error; ChangeAdmin(ctx context.Context, caller CallerContext, conversation ConversationID, target AccountID, promote bool) error; RenameGroup(ctx context.Context, caller CallerContext, conversation ConversationID, name string) error; HideDirect(ctx context.Context, caller CallerContext, conversation ConversationID, hidden bool) error; Leave(ctx context.Context, caller CallerContext, conversation ConversationID) error }"/>
@@ -90,15 +93,15 @@
     <INTERFACE id="CFC36-I-HISTORY-REPOSITORY" name="HistoryRepository" signature="type HistoryRepository interface { ReadHistoryPage(ctx context.Context, conversation ConversationID, viewer AccountID, after int64, limit int) (HistoryPage, error); AdvanceReadMarker(ctx context.Context, conversation ConversationID, viewer AccountID, ordinal int64) (int64, error); CountUnread(ctx context.Context, conversation ConversationID, viewer AccountID) (int64, error) }"/>
     <INTERFACE id="CFC36-I-MESSAGE-OPERATIONS" name="MessageOperations" signature="type MessageOperations interface { Send(ctx context.Context, caller CallerContext, conversation ConversationID, input SendMessageInput) (StoredMessage, error) }"/>
     <INTERFACE id="CFC36-I-HISTORY-OPERATIONS" name="HistoryOperations" signature="type HistoryOperations interface { ReadPage(ctx context.Context, caller CallerContext, conversation ConversationID, after int64, limit int) (HistoryPage, error); MarkRead(ctx context.Context, caller CallerContext, conversation ConversationID, ordinal int64) (int64, error); Unread(ctx context.Context, caller CallerContext, conversation ConversationID) (int64, error) }"/>
-    <INTERFACE id="CFC36-I-SUBSCRIPTION-OPERATIONS" name="SubscriptionOperations" signature="type SubscriptionOperations interface { Register(ctx context.Context, caller CallerContext, input PushSubscription) error; Replace(ctx context.Context, caller CallerContext, input PushSubscription) error; Remove(ctx context.Context, caller CallerContext) error }"/>
+    <INTERFACE id="CFC36-I-SUBSCRIPTION-OPERATIONS" name="SubscriptionOperations" signature="type SubscriptionOperations interface { Register(ctx context.Context, caller CallerContext, input PushSubscription) (SubscriptionID, error); Replace(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID, input PushSubscription) error; Remove(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID) error }"/>
     <INTERFACE id="CFC36-I-WAKETOKEN-RESOLVER" name="WakeTokenResolver" signature="type WakeTokenResolver interface { Resolve(ctx context.Context, token WakeToken) (ConversationID, error) }"/>
     <INTERFACE id="CFC36-I-WAKETOKEN-ISSUER" name="WakeTokenIssuer" signature="type WakeTokenIssuer interface { Issue(ctx context.Context, conversation ConversationID) (WakeToken, error) }"/>
     <INTERFACE id="CFC36-I-COMMITTED-NOTIFIER" name="CommittedMessageNotifier" signature="type CommittedMessageNotifier interface { NotifyCommitted(ctx context.Context, event CommittedMessage) }"/>
-    <INTERFACE id="CFC36-I-SUBSCRIPTION-REPOSITORY" name="SubscriptionRepository" signature="type SubscriptionRepository interface { UpsertSubscription(ctx context.Context, account AccountID, subscription PushSubscription) error; DeleteSubscription(ctx context.Context, account AccountID) error }"/>
+    <INTERFACE id="CFC36-I-SUBSCRIPTION-REPOSITORY" name="SubscriptionRepository" signature="type SubscriptionRepository interface { CreateSubscription(ctx context.Context, account AccountID, subscription PushSubscription) (SubscriptionID, error); ReplaceSubscription(ctx context.Context, account AccountID, subscriptionID SubscriptionID, subscription PushSubscription) error; DeleteSubscription(ctx context.Context, account AccountID, subscriptionID SubscriptionID) error }"/>
     <INTERFACE id="CFC36-I-WAKETOKEN-REPOSITORY" name="WakeTokenRepository" signature="type WakeTokenRepository interface { SaveWakeToken(ctx context.Context, token WakeToken, conversation ConversationID) error; ResolveWakeToken(ctx context.Context, token WakeToken) (ConversationID, error) }"/>
-    <INTERFACE id="CFC36-I-REALTIME-REPOSITORY" name="RealtimeRepository" signature="type RealtimeRepository interface { ClaimNextDelivery(ctx context.Context) (DeliveryJob, bool, error); MarkInterruptedDeliveriesUnknown(ctx context.Context) error; EligibleRecipients(ctx context.Context, conversation ConversationID, exclude AccountID) ([]Recipient, error); RecordDeliveryOutcome(ctx context.Context, deliveryID string, outcome string) error }">ClaimNextDelivery atomically claims one pending per-recipient outbox intent. MarkInterruptedDeliveriesUnknown terminalizes previously claimed attempts that did not record a conclusive result. Delivery outcomes are terminal and are not retried automatically.</INTERFACE>
+    <INTERFACE id="CFC36-I-REALTIME-REPOSITORY" name="RealtimeRepository" signature="type RealtimeRepository interface { ClaimNextDelivery(ctx context.Context) (DeliveryJob, bool, error); MarkInterruptedDeliveriesUnknown(ctx context.Context) error; EligibleRecipients(ctx context.Context, conversation ConversationID, exclude AccountID) ([]Recipient, error); RecordDeliveryOutcome(ctx context.Context, deliveryID string, outcome string) error }">ClaimNextDelivery atomically claims one pending per-subscription outbox intent. EligibleRecipients returns one target per current account-owned subscription for eligible recipient accounts, excluding every subscription owned by the sender. MarkInterruptedDeliveriesUnknown terminalizes previously claimed attempts that did not record a conclusive result. Delivery outcomes are terminal and are not retried automatically.</INTERFACE>
     <INTERFACE id="CFC36-I-CONVERSATION-TX" name="ConversationTx" signature="type ConversationTx interface { LockConversation(ctx context.Context) error; RequireConversationKind(ctx context.Context, kind string) error; RequireActiveMember(ctx context.Context, account AccountID) (MembershipState, error); RequireRole(ctx context.Context, account AccountID, role string) error; AddMember(ctx context.Context, account AccountID, role string) error; RemoveMember(ctx context.Context, account AccountID) error; SetMemberRole(ctx context.Context, account AccountID, role string) error; TransferOwner(ctx context.Context, successor AccountID) error; RenameGroup(ctx context.Context, name string) error; SetDirectHidden(ctx context.Context, viewer AccountID, hidden bool) error; InsertMessage(ctx context.Context, message NewMessage) (StoredMessage, error); SaveIdempotencyResult(ctx context.Context, key IdempotencyKey, result StoredMessage) error; ActiveRecipients(ctx context.Context, exclude AccountID) ([]Recipient, error); AdvanceReadMarker(ctx context.Context, account AccountID, ordinal int64) (int64, error) }"/>
-    <INTERFACE id="CFC36-I-ROUTE-SUBSCRIPTION" name="Subscription route boundary" status="UNRESOLVED">A protected route must call SubscriptionOperations only after request authentication and availability checks. HTTP method, path and JSON schema are not specified by the approved upstream sources.</INTERFACE>
+    <INTERFACE id="CFC36-I-ROUTE-SUBSCRIPTION" name="Subscription route boundary" status="PROPOSED_PENDING_ROUTE_APPROVAL">Proposed POST /conversations/push-subscriptions, PUT /conversations/push-subscriptions/{subscriptionId}, and DELETE /conversations/push-subscriptions/{subscriptionId}, with schemas in DP36-PUBLIC-HTTP-CONTRACTS. All require session-bound DPoP, Chat enabled and ownership scoped to authenticated AccountID. Keep OPEN-002 blocked until the Project Owner explicitly approves the exact routes and schemas.</INTERFACE>
     <INTERFACE id="CFC36-I-ROUTE-WAKETOKEN" name="WakeToken resolution route boundary" status="UNRESOLVED">A protected route must authenticate the current DPoP-bound session, check availability and current policy, resolve the opaque token, and return no protected data on failure. HTTP method, path and JSON schema are not specified by the approved upstream sources.</INTERFACE>
   </SUPPORTING_TYPES>
 
@@ -111,7 +114,7 @@
     <CLASS_CONTRACT id="CC36-HTTP-HANDLER" name="HTTPHandler" module_ref="MC36-HTTP" status="PROPOSED">
       <CURRENT_SYMBOL source="internal/issue25/http.go" signature="func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)"/>
       <PROPOSED_SIGNATURE>func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)</PROPOSED_SIGNATURE>
-      <RESPONSIBILITY>Validate request shape and documented size limits, delegate protected-request authentication and current authorization to their owning modules, dispatch to the responsible domain service, and map typed outcomes to HTTP responses.</RESPONSIBILITY>
+      <RESPONSIBILITY>Validate request shape and documented size limits, delegate protected-request authentication and current authorization to their owning modules, dispatch to the responsible domain service, expose the approved wakeToken route and the proposed subscription routes only as specified in DP36-PUBLIC-HTTP-CONTRACTS, and map typed outcomes through DP36-HTTP-ERROR-MAPPING.</RESPONSIBILITY>
       <PRECONDITION>Handler dependencies are non-nil; request is presented to the approved unversioned /conversations resource tree.</PRECONDITION>
       <POSTCONDITION>Malformed, unauthenticated, disabled, or unauthorized requests cause no protected domain mutation. Failure responses disclose no protected data.</POSTCONDITION>
       <FORBIDDEN>Authenticate by trusting account UUID; decide membership locally; publish push events; infer or expose a conversation ID from wakeToken input; create undocumented route aliases.</FORBIDDEN>
@@ -121,12 +124,12 @@
       <STATE_CHANGES>No direct domain-state changes; delegated services own any authorized changes.</STATE_CHANGES>
       <INVARIANTS>Malformed, oversized, unauthenticated, disabled or unauthorized requests cause no protected mutation.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not implement session verification, membership policy, persistence, wakeToken interpretation or realtime publication.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Validate request shape and documented limits before side effects; use only the approved unversioned resource tree.</BUSINESS_RULES>
+      <BUSINESS_RULES>Validate request shape and documented limits before side effects; use only the approved unversioned resource tree. Apply the common public error-code/status table in DP36-HTTP-ERROR-MAPPING.</BUSINESS_RULES>
       <TEST_PROPERTIES>Rejected requests have no protected mutation; errors reveal no conversation, message, token or endpoint secrets.</TEST_PROPERTIES>
       <SIDE_EFFECTS>Validate and dispatch the request and write the HTTP response; no direct persistence or network publication.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Map validation, authentication, availability, authorization, conflict and internal errors without exposing protected values.</FAILURE_BEHAVIOR>
 
-      <TRACE refs="MC36-HTTP MC36-IDENTITY MC36-AVAILABILITY MC36-POLICY DP36-F01 DP36-F05 REQ32-API REQ32-AUTH REQ32-LIMITS INV32-ONE-API MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
+      <TRACE refs="MC36-HTTP MC36-IDENTITY MC36-AVAILABILITY MC36-POLICY DP36-F01 DP36-F05 DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-ERROR-MAPPING REQ32-API REQ32-AUTH REQ32-LIMITS INV32-ONE-API MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
     </CLASS_CONTRACT>
 
     <CLASS_CONTRACT id="CC36-IDENTITY-VALIDATOR" name="authentication.Validator" module_ref="MC36-IDENTITY" status="PROPOSED_REUSE_CANDIDATE">
@@ -152,26 +155,24 @@
     </CLASS_CONTRACT>
 
     <CLASS_CONTRACT id="CC36-AVAILABILITY" name="AvailabilityService" module_ref="MC36-AVAILABILITY" status="PROPOSED_NEW">
-      
-      <PROPOSED_SIGNATURE>type AvailabilityService struct { State ChatStateReader }</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>type AvailabilityService struct { Config ChatRuntimeConfig }</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s AvailabilityService) RequireEnabled(ctx context.Context) error</PROPOSED_SIGNATURE>
-      <RESPONSIBILITY>Read the authoritative administrative Chat enabled/disabled state and provide one fail-closed gate to protected operations.</RESPONSIBILITY>
-      <PRECONDITION>State reader is configured.</PRECONDITION>
-      <POSTCONDITION>Return nil only when Chat is enabled. Return a typed unavailable/disabled error when disabled. Treat inability to determine state as failure, not as enabled.</POSTCONDITION>
-      <SIDE_EFFECTS>Read state only.</SIDE_EFFECTS>
-      <FORBIDDEN>Assume enabled when the state source fails; promise forced closure of already-active ntfy subscriptions; impose an undocumented delivery-stop deadline.</FORBIDDEN>
-      <INTENT>Gate protected Chat operations on the current administrative enabled state.</INTENT>
-      <INPUTS>Request context and authoritative Chat state reader.</INPUTS>
-      <OUTPUTS>Enabled decision or typed disabled/unavailable error.</OUTPUTS>
+      <RESPONSIBILITY>Gate protected Chat operations using the validated -chat-enabled startup configuration.</RESPONSIBILITY>
+      <PRECONDITION>ChatRuntimeConfig has been parsed and validated before the server starts.</PRECONDITION>
+      <POSTCONDITION>Return nil only when Config.Enabled is true; otherwise return CHAT_DISABLED. The setting cannot change while this process is running.</POSTCONDITION>
+      <SIDE_EFFECTS>Read immutable in-process configuration only.</SIDE_EFFECTS>
+      <FORBIDDEN>Read a database/admin-service state provider, expose a live toggle, assume enabled by default, or promise forced closure of already-active ntfy subscriptions.</FORBIDDEN>
+      <INTENT>Gate protected Chat operations on the configured startup availability.</INTENT>
+      <INPUTS>Validated immutable ChatRuntimeConfig.</INPUTS>
+      <OUTPUTS>Enabled decision or typed CHAT_DISABLED error.</OUTPUTS>
       <STATE_CHANGES>None.</STATE_CHANGES>
-      <INVARIANTS>Unknown administrative state is never treated as enabled.</INVARIANTS>
-      <NON_RESPONSIBILITIES>Does not own the administrative control plane or force-close active ntfy subscriptions.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>When disabled, deny protected operations, history, wakeToken resolution and new registrations.</BUSINESS_RULES>
-      <TEST_PROPERTIES>Disabled state and state-reader failure both deny the protected operation.</TEST_PROPERTIES>
-      <FAILURE_BEHAVIOR>Fail closed when state cannot be read.</FAILURE_BEHAVIOR>
-
-      <TRACE refs="MC36-AVAILABILITY DP36-M-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F08"/>
-      <DECISION_NOTE>The authoritative state source and storage mechanism are not specified by the approved module contract. ChatStateReader is an abstraction; selecting its concrete provider is a separate implementation decision.</DECISION_NOTE>
+      <INVARIANTS>-chat-enabled defaults to false; changing it requires server restart.</INVARIANTS>
+      <NON_RESPONSIBILITIES>Does not own a separate administrative control plane or force-close active ntfy subscriptions.</NON_RESPONSIBILITIES>
+      <BUSINESS_RULES>When disabled, deny protected operations, history, wakeToken resolution and new push-subscription registrations.</BUSINESS_RULES>
+      <TEST_PROPERTIES>Default configuration denies Chat; true enables the availability gate; malformed boolean input prevents startup.</TEST_PROPERTIES>
+      <FAILURE_BEHAVIOR>Return CHAT_DISABLED when Config.Enabled is false.</FAILURE_BEHAVIOR>
+      <TRACE refs="MC36-AVAILABILITY DP36-M-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-ENABLED TD36-CHAT-STATE MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F08 DP36-HTTP-ERR-CHAT-DISABLED"/>
+      <DECISION_NOTE>The Project Owner decision selects startup runtime configuration as the sole source. No database-backed or admin-service provider is introduced.</DECISION_NOTE>
     </CLASS_CONTRACT>
 
     <CLASS_CONTRACT id="CC36-POLICY" name="PolicyService" module_ref="MC36-POLICY" status="PROPOSED_NEW">
@@ -283,7 +284,7 @@
       <STATE_CHANGES>Conversation, membership, message, idempotency, read-state, subscription, token and delivery-outcome records through their owning repository interfaces.</STATE_CHANGES>
       <INVARIANTS>Transaction boundaries preserve DP36 ordering and never expose partial committed state; outbound HTTP never runs inside a database transaction.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not make authorization decisions, store document content, grant document rights or perform schema migration as part of a request.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Message, idempotency result and one delivery intent per eligible recipient commit atomically; token mapping is durable before publication; membership and visibility boundaries are atomic; network I/O is post-commit.</BUSINESS_RULES>
+      <BUSINESS_RULES>Message, idempotency result and one delivery intent per eligible account-owned subscription commit atomically; token mapping is durable before publication; membership and visibility boundaries are atomic; network I/O is post-commit.</BUSINESS_RULES>
       <TEST_PROPERTIES>Transaction rollback, concurrent membership/message ordering, durable outbox claims and outcomes, and durable token/read-marker/subscription writes match DP36 transaction boundaries.</TEST_PROPERTIES>
       <SIDE_EFFECTS>PostgreSQL reads and writes only; external network I/O is outside database transactions.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Propagate database/transaction failure without claiming success or converting write failure into authorization success.</FAILURE_BEHAVIOR>
@@ -293,25 +294,25 @@
 
     <CLASS_CONTRACT id="CC36-SUBSCRIPTION" name="SubscriptionService" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW">
       <PROPOSED_SIGNATURE>type SubscriptionService struct { Availability AvailabilityChecker; EndpointValidator PushEndpointValidator; ConfiguredOrigin *url.URL; Repository SubscriptionRepository }</PROPOSED_SIGNATURE>
-      <PROPOSED_SIGNATURE>func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) error</PROPOSED_SIGNATURE>
-      <PROPOSED_SIGNATURE>func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, input PushSubscription) error</PROPOSED_SIGNATURE>
-      <PROPOSED_SIGNATURE>func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext) error</PROPOSED_SIGNATURE>
-      <RESPONSIBILITY>Register, replace and remove the authenticated account's Endpoint-only UnifiedPush destination and encryption material.</RESPONSIBILITY>
-      <PRECONDITION>Caller identity and DPoP are validated; Chat is enabled; ConfiguredOrigin is trusted validated configuration; the complete Endpoint passes exact-origin and pinned-format validation; public key and auth secret are valid for the approved Web Push encryption flow.</PRECONDITION>
-      <POSTCONDITION>Protected subscription data is associated with the authenticated account. A subscription grants no membership or history access. Endpoint and secrets are not returned to another account or logged.</POSTCONDITION>
-      <FORBIDDEN>Accept registration while disabled; trust a client-selected arbitrary origin; store or derive a separate Topic; expose ntfy admin credentials; use subscription possession as authorization.</FORBIDDEN>
-      <INTENT>Manage the authenticated account's UnifiedPush destination as protected delivery data.</INTENT>
-      <INPUTS>Validated caller context, the complete Endpoint URL returned by UnifiedPush registration, and Web Push encryption material.</INPUTS>
-      <OUTPUTS>Registration/replacement/removal result or non-disclosing error.</OUTPUTS>
-      <STATE_CHANGES>Only the authenticated account's subscription record.</STATE_CHANGES>
-      <INVARIANTS>Endpoint is stored as the complete returned URL; no separate Topic is accepted or persisted; only the configured HTTPS ntfy origin and pinned Endpoint format are accepted.</INVARIANTS>
+      <PROPOSED_SIGNATURE>func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) (SubscriptionID, error)</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID, input PushSubscription) error</PROPOSED_SIGNATURE>
+      <PROPOSED_SIGNATURE>func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID) error</PROPOSED_SIGNATURE>
+      <RESPONSIBILITY>Register, replace and remove protected UnifiedPush subscription records owned by the authenticated AccountID.</RESPONSIBILITY>
+      <PRECONDITION>Caller identity and session-bound DPoP are validated; Chat is enabled; ConfiguredOrigin is trusted validated configuration; the complete Endpoint and encryption material pass validation. Replace/remove additionally require subscriptionId to resolve within the authenticated AccountID scope.</PRECONDITION>
+      <POSTCONDITION>Each successful registration creates a new record and returns only its opaque SubscriptionID. Replace/remove affect only the selected record owned by the authenticated AccountID. One account may own an unbounded number of records.</POSTCONDITION>
+      <FORBIDDEN>Accept registration while disabled; trust a client-selected arbitrary origin; store or derive a separate Topic; introduce Device/DeviceID or device-specific authorization; expose ntfy admin credentials; use subscription ID possession as authorization.</FORBIDDEN>
+      <INTENT>Manage an unbounded set of account-owned UnifiedPush subscription records as protected delivery data.</INTENT>
+      <INPUTS>Validated caller context; for register/replace, endpoint and keys.p256dh/keys.auth; for replace/remove, the opaque subscriptionId path parameter.</INPUTS>
+      <OUTPUTS>Registration returns SubscriptionID only; replace/remove return success or a non-disclosing mapped error.</OUTPUTS>
+      <STATE_CHANGES>Create, replace or remove only the selected subscription record owned by the authenticated AccountID.</STATE_CHANGES>
+      <INVARIANTS>Each record is owned by AccountID and identified by SubscriptionID; accounts have no subscription-count limit. SubscriptionID is not a device identifier or authorization capability. Endpoint is stored as the complete returned URL; no separate Topic is accepted or persisted; only the configured HTTPS ntfy origin and pinned Endpoint format are accepted.</INVARIANTS>
       <NON_RESPONSIBILITIES>Does not create membership, grant history access, widen ntfy ACL or expose admin credentials.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Authenticate with session-bound DPoP, check availability and endpoint security before persistence. Preserve the full Endpoint unchanged. Do not accept, store or derive a separate Topic.</BUSINESS_RULES>
-      <TEST_PROPERTIES>Invalid format/out-of-origin Endpoint, disabled Chat and cross-account attempts never change another account's subscription.</TEST_PROPERTIES>
-      <SIDE_EFFECTS>Protected subscription persistence only.</SIDE_EFFECTS>
-      <FAILURE_BEHAVIOR>Invalid Endpoint or disabled Chat produces no write; failed replacement preserves the previous valid record.</FAILURE_BEHAVIOR>
-      <TRACE refs="MC36-SUBSCRIPTION MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG DP36-TX-SUBSCRIPTION MC36-I-F02 MC36-I-F04 MC36-I-F08"/>
-      <DECISION_NOTE>No HTTP route or request/response JSON shape is assigned by this contract; route mapping remains unresolved.</DECISION_NOTE>
+      <BUSINESS_RULES>Authenticate with session-bound DPoP, require Chat enabled, derive AccountID from the validated session and scope replace/remove to that account's SubscriptionID. Preserve the full Endpoint unchanged. Do not accept, store or derive a separate Topic, DeviceID or device-specific policy.</BUSINESS_RULES>
+      <TEST_PROPERTIES>Verify multiple records per AccountID, registration returns only SubscriptionID, invalid Endpoint causes no write, failed replacement preserves the prior record, and cross-account replace/remove cannot mutate or disclose another account's record.</TEST_PROPERTIES>
+      <SIDE_EFFECTS>Protected subscription-record persistence only.</SIDE_EFFECTS>
+      <FAILURE_BEHAVIOR>Invalid Endpoint or disabled Chat produces no write; failed replacement preserves the previous valid record; unknown or cross-account subscription IDs return a non-disclosing NOT_FOUND result.</FAILURE_BEHAVIOR>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG TD36-CHAT-ENABLED DP36-TX-SUBSCRIPTION DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-ERROR-MAPPING MC36-I-F02 MC36-I-F04 MC36-I-F08 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED DP36-HTTP-ERR-NOT-FOUND"/>
+      <DECISION_NOTE>POST/PUT/DELETE route and JSON-schema details are proposals in DP36-004. Keep OPEN-002 blocked until the Project Owner explicitly approves the exact registration, replacement and removal routes and schemas.</DECISION_NOTE>
     </CLASS_CONTRACT>
 
     <CLASS_CONTRACT id="CC36-ENDPOINT-SECURITY" name="PushEndpointValidator" module_ref="MC36-ENDPOINT-SECURITY" status="PROPOSED_NEW">
@@ -362,12 +363,12 @@
       <PROPOSED_SIGNATURE>func (s RealtimeWakeService) NotifyCommitted(ctx context.Context, event CommittedMessage)</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (s RealtimeWakeService) RunDeliveryWorker(ctx context.Context) error</PROPOSED_SIGNATURE>
       <PROPOSED_SIGNATURE>func (e RFC8291WebPushEncryptor) Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error)</PROPOSED_SIGNATURE>
-      <RESPONSIBILITY>Signal a background worker after commit and process durable per-recipient outbox intents asynchronously. The worker rechecks eligibility, ensures durable token mapping, encrypts the exact allowlisted payload, publishes through ntfy and records terminal outcomes without secrets.</RESPONSIBILITY>
-      <PRECONDITION>Message, idempotency result and per-recipient outbox intents have committed atomically; Endpoint and encryption material are validated; HTTPTimeout is positive.</PRECONDITION>
+      <RESPONSIBILITY>Signal a background worker after commit and process durable per-subscription outbox intents asynchronously. The worker rechecks account and subscription eligibility, ensures durable token mapping, encrypts the exact allowlisted payload, publishes through ntfy and records terminal outcomes without secrets.</RESPONSIBILITY>
+      <PRECONDITION>Message, idempotency result and one outbox intent per eligible account-owned subscription have committed atomically; Endpoint and encryption material are validated; HTTPTimeout is positive.</PRECONDITION>
       <POSTCONDITION>NotifyCommitted performs only a non-blocking wake signal and never waits for network delivery. The worker performs network I/O outside database transactions. Delivery outcome is terminal; UNKNOWN is never retried automatically.</POSTCONDITION>
       <FORBIDDEN>Include message text, conversation/account identifiers, document IDs/titles or document content; publish before commit; use Centrifuge/WebSocket; expose ntfy administrative credentials; perform network I/O inside a database transaction; retry failed or UNKNOWN delivery automatically.</FORBIDDEN>
       <INTENT>Deliver minimal encrypted wake hints in the background after message commit using ntfy as the sole realtime transport.</INTENT>
-      <INPUTS>Durable per-recipient delivery jobs, current recipient/subscription state, token service, validated Endpoint, encryption material, configured origin, positive timeout and service-lifecycle context.</INPUTS>
+      <INPUTS>Durable per-subscription delivery jobs, current recipient/subscription state, token service, validated Endpoint, encryption material, configured origin, positive timeout and service-lifecycle context.</INPUTS>
       <OUTPUTS>NotifyCommitted returns immediately after a best-effort non-blocking signal; RunDeliveryWorker returns only on cancellation or fatal worker error.</OUTPUTS>
       <STATE_CHANGES>Claim one durable delivery job before HTTP and record a terminal delivery outcome; message state is already committed.</STATE_CHANGES>
       <INVARIANTS>Sender excluded; payload contains only protocol version and opaque wakeToken; one attempt per durable recipient intent; no duplicate intent on idempotent replay; UNKNOWN is terminal.</INVARIANTS>
@@ -380,7 +381,7 @@
       <DECISION_NOTE>The durable outbox is a proposed design: outbox intents commit with the message; each recipient intent is claimed durably before HTTP; interrupted claims become UNKNOWN; no network I/O occurs in a database transaction. This design and this CFC revision still require Independent QA and Human Approval.</DECISION_NOTE>
     </CLASS_CONTRACT>
 
-    <CLASS_CONTRACT id="CC36-ANDROID-PUSH-BOUNDARY" name="BFE Chat Android push receiver" module_ref="MC36-ANDROID-PUSH" status="EXTERNAL_SOURCE_REQUIRED">
+    <CLASS_CONTRACT id="CC36-ANDROID-PUSH-BOUNDARY" name="BFE Chat Android push receiver" module_ref="MC36-ANDROID-PUSH" status="EXTERNAL_INTEROP_ACCEPTANCE_DEPENDENCY">
       <RESPONSIBILITY>Receive the decrypted UnifiedPush wake payload, accept only protocol version and opaque wakeToken, retain only those fields in internal navigation state, and create a generic system notification without protected content.</RESPONSIBILITY>
       <PRECONDITION>Android client uses the approved UnifiedPush connector 3.3.5 and ntfy Android distributor target.</PRECONDITION>
       <POSTCONDITION>Visible notification text contains no message text, account/conversation identifiers, document metadata or content. Receipt is never treated as authorization.</POSTCONDITION>
@@ -397,10 +398,10 @@
       <FAILURE_BEHAVIOR>Ignore malformed or non-allowlisted payloads without exposing payload content.</FAILURE_BEHAVIOR>
 
       <TRACE refs="MC36-ANDROID-PUSH DP36-M-ANDROID-PUSH DP36-F05 REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-TRANSPORT TD36-PAYLOAD TD36-ANDROID-NOTIFICATION TECH36-UP-ANDROID TECH36-NTFY-ANDROID MC36-I-F05 MC36-I-F08"/>
-      <BLOCKER>The Android source repository and its current Kotlin symbols are not present in bfe-chat-service. Exact Android class/function signatures must be created against that repository; no Kotlin signature is invented here.</BLOCKER>
+      <EXTERNAL_INTEROP_GATE>Android push delivery and notification navigation remain a downstream interoperability/acceptance dependency. Kotlin signatures are intentionally not specified in backend CFC and the Android source repository is not a backend-contract prerequisite.</EXTERNAL_INTEROP_GATE>
     </CLASS_CONTRACT>
 
-    <CLASS_CONTRACT id="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" name="BFE Chat Android notification activation" module_ref="MC36-NOTIFICATION-ACTIVATION" status="EXTERNAL_SOURCE_REQUIRED">
+    <CLASS_CONTRACT id="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" name="BFE Chat Android notification activation" module_ref="MC36-NOTIFICATION-ACTIVATION" status="EXTERNAL_INTEROP_ACCEPTANCE_DEPENDENCY">
       <RESPONSIBILITY>On activation, submit wakeToken through the protected Chat API using the current session-bound DPoP context; navigate only after successful server resolution, then fetch authorized cursor-based history.</RESPONSIBILITY>
       <PRECONDITION>Notification internal state contains protocol version and wakeToken only; current session context is available.</PRECONDITION>
       <POSTCONDITION>No conversation navigation or protected history request occurs before successful token resolution. Disabled Chat, revoked membership, invalid token and visibility failures fail closed without protected disclosure.</POSTCONDITION>
@@ -417,36 +418,34 @@
       <FAILURE_BEHAVIOR>Stay away from the target conversation on invalid token, revoked access, invalid DPoP or disabled Chat.</FAILURE_BEHAVIOR>
 
       <TRACE refs="MC36-NOTIFICATION-ACTIVATION MC36-WAKETOKEN MC36-HISTORY-READ DP36-D12 DP36-D13 DP36-F05 DP36-F08 REQ36-NOTIFICATION REQ36-WAKE-TOKEN REQ32-AUTH REQ32-HISTORY REQ36-CHAT-STATE INV36-OPAQUE-WAKE INV36-WAKE-TOKEN TD36-ANDROID-NOTIFICATION MC36-I-F05 MC36-I-F08"/>
-      <BLOCKER>The Android source repository and its current Kotlin symbols are not present in bfe-chat-service. Exact Android class/function signatures must be created against that repository; no Kotlin signature is invented here.</BLOCKER>
+      <EXTERNAL_INTEROP_GATE>Android push delivery and notification navigation remain a downstream interoperability/acceptance dependency. Kotlin signatures are intentionally not specified in backend CFC and the Android source repository is not a backend-contract prerequisite.</EXTERNAL_INTEROP_GATE>
     </CLASS_CONTRACT>
   </CLASS_CONTRACTS>
 
   <FUNCTION_CONTRACTS>
     <FUNCTION_CONTRACT id="FC36-HTTP-WIRING" name="buildHandler" module_ref="MC36-HTTP" status="PROPOSED_NEW" signature="func buildHandler(deps RuntimeDependencies) (http.Handler, error)" source="cmd/bfe-chat-service/main.go">
       <CURRENT_SIGNATURE name="buildHandler" source="cmd/bfe-chat-service/main.go">func buildHandler(db *sql.DB, c runtimeConfig) (http.Handler, *centrifuge.Node, error)</CURRENT_SIGNATURE>
-      
-      <RESPONSIBILITY>Compose the approved HTTP resource tree and inject identity, availability, policy, conversation, message, history, subscription, wakeToken, persistence and realtime dependencies.</RESPONSIBILITY>
-      <PRECONDITIONS>All configured dependencies are validated and ready; the PostgreSQL connection and Internal Auth UDS dependency are available.</PRECONDITIONS>
-      <POSTCONDITIONS>Return the protected unversioned /conversations handler. Do not expose /v1 or /v2 conversation aliases and do not wire Centrifuge or WebSocket as the Issue 36 realtime transport.</POSTCONDITIONS>
+      <INPUTS>Validated RuntimeDependencies and trusted runtime configuration.</INPUTS>
+      <OUTPUTS>One ready-to-serve protected /conversations HTTP handler, or a construction error.</OUTPUTS>
+      <PRECONDITIONS>PostgreSQL and Internal Auth UDS dependencies are ready. -chat-enabled has been parsed as a boolean with default false; -ntfy-origin is required and validated separately from -public-origin; -ntfy-timeout is positive and defaults to 5s.</PRECONDITIONS>
+      <POSTCONDITIONS>Return the protected unversioned /conversations handler. Wire POST /conversations/wake-token/resolve with the approved request/response schemas. Keep the proposed subscription routes exactly as recorded in DP36-PUBLIC-HTTP-CONTRACTS but pending approval. Do not expose /v1 or /v2 conversation aliases and do not wire Centrifuge or WebSocket as the Issue 36 realtime transport.</POSTCONDITIONS>
       <SIDE_EFFECTS>Composition only; no conversation writes, token issuance or notification publication.</SIDE_EFFECTS>
       <FAILURE_BEHAVIOR>Return an error if required configuration or dependencies are invalid; do not start a partially wired service.</FAILURE_BEHAVIOR>
       <INTENT>Compose the protected Chat API without introducing a second or versioned conversation API.</INTENT>
-      <INPUTS>Validated RuntimeDependencies and trusted runtime configuration.</INPUTS>
-      <OUTPUTS>One ready-to-serve protected /conversations HTTP handler, or a construction error.</OUTPUTS>
-      <STATE_CHANGES>None during composition.</STATE_CHANGES>
-      <INVARIANTS>Only the unversioned /conversations tree is exposed; Centrifuge and WebSocket are not wired as the Issue 36 realtime transport.</INVARIANTS>
+      <RESPONSIBILITY>Compose the HTTP resource tree and inject identity, configuration-backed availability, policy, conversation, message, history, subscription, wakeToken, persistence and realtime dependencies.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Does not implement request authorization, domain mutations, token issuance or notification publication.</NON_RESPONSIBILITIES>
-      <BUSINESS_RULES>Required dependencies and configuration must be validated before the handler is returned.</BUSINESS_RULES>
+      <STATE_CHANGES>None during composition.</STATE_CHANGES>
+      <INVARIANTS>Only the unversioned /conversations tree is exposed; Centrifuge and WebSocket are not wired as the Issue 36 realtime transport. Public errors follow DP36-HTTP-ERROR-MAPPING.</INVARIANTS>
+      <BUSINESS_RULES>Required dependencies and configuration must be validated before the handler is returned. The subscription routes remain proposals pending explicit Project Owner approval.</BUSINESS_RULES>
       <TEST_PROPERTIES>Missing or invalid dependencies prevent successful construction; the returned handler has no /v1 or /v2 conversation aliases.</TEST_PROPERTIES>
-
-      <TRACE refs="MC36-HTTP DP36-M-HTTP DP36-F01 DP36-F05 REQ32-API REQ32-ISOLATION TECH36-INTERNAL-AUTH TECH36-PGX TD36-TRANSPORT MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
-      <DECISION_NOTE>RuntimeConfig fields and environment variable names for newly required integrations are not defined here because the approved sources do not specify them. Resolve them in a separate configuration-level contract before implementation.</DECISION_NOTE>
+      <TRACE refs="MC36-HTTP DP36-M-HTTP DP36-F01 DP36-F05 DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-ERROR-MAPPING REQ32-API REQ32-ISOLATION TECH36-INTERNAL-AUTH TECH36-PGX TD36-TRANSPORT TD36-CHAT-ENABLED MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
+      <DECISION_NOTE>The proposed runtime flags are -chat-enabled (default false), -ntfy-origin (required HTTPS origin) and -ntfy-timeout (default 5s, positive). No environment-variable names are inferred. Subscription management routes remain proposals pending explicit Project Owner approval.</DECISION_NOTE>
     </FUNCTION_CONTRACT>
     <FUNCTION_CONTRACT id="FC36-HTTP-ENTRY" name="HTTPHandler.ServeHTTP" module_ref="MC36-HTTP" status="PROPOSED_REUSE_CANDIDATE" signature="func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)" source="internal/issue25/http.go">
       <INPUTS>HTTP request, response writer and injected service dependencies.</INPUTS><OUTPUTS>One HTTP response carrying the successful operation result or a mapped non-disclosing error.</OUTPUTS>
       <PRECONDITIONS>Request is received under the single unversioned /conversations tree; request shape and size can be validated before side effects.</PRECONDITIONS>
       <POSTCONDITIONS>Dispatch only to the responsible service after authentication and availability checks; no protected mutation occurs on rejected input or failed authorization.</POSTCONDITIONS>
-      <FAILURE_BEHAVIOR>Map validation, authentication, availability, authorization, conflict and internal errors at the HTTP boundary without disclosing protected values.</FAILURE_BEHAVIOR>
+      <FAILURE_BEHAVIOR>Map errors through DP36-HTTP-ERROR-MAPPING: AUTH_INVALID/401, AUTH_UNAVAILABLE/503, CHAT_DISABLED/503, VALIDATION_ERROR/400, FORBIDDEN/403, NOT_FOUND/404, CONFLICT_409/409, METHOD_NOT_ALLOWED/405, STORAGE_UNAVAILABLE/503 and INTERNAL_ERROR/500. Never disclose protected values.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>HTTP response only; service calls may have effects only after all required gates pass.</SIDE_EFFECTS>
       <INTENT>Dispatch one protected request through the approved Chat API boundary.</INTENT>
       <RESPONSIBILITY>Validate transport input and route each allowed operation to its owning service.</RESPONSIBILITY>
@@ -454,10 +453,10 @@
       <STATE_CHANGES>No direct domain-state change; delegated services may change state only after all gates pass.</STATE_CHANGES>
       <INVARIANTS>Rejected or malformed requests produce no protected domain mutation; failures disclose no protected data.</INVARIANTS>
       <TEST_PROPERTIES>Verify malformed, oversized, unauthenticated, disabled and unauthorized requests have no protected mutation and return non-disclosing responses.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Only the unversioned /conversations resource tree is valid; validate request shape and limits before protected side effects.</BUSINESS_RULES>
+      <BUSINESS_RULES>Only the unversioned /conversations resource tree is valid; validate request shape and limits before protected side effects. The wakeToken route/schema are pinned in DP36-HTTP-WAKETOKEN-RESOLVE. Subscription route/schema proposals remain pending approval. Use the common public error map in DP36-HTTP-ERROR-MAPPING.</BUSINESS_RULES>
 
 
-      <TRACE refs="MC36-HTTP DP36-F01 DP36-F05 REQ32-API REQ32-LIMITS MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
+      <TRACE refs="MC36-HTTP DP36-F01 DP36-F05 DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-ERROR-MAPPING REQ32-API REQ32-LIMITS TD36-CHAT-ENABLED MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F08 MC36-I-F02 MC36-I-F03 MC36-I-F07"/>
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-IDENTITY-VALIDATE" name="Validator.ValidateCaller" module_ref="MC36-IDENTITY" status="PROPOSED_REUSE_CANDIDATE" signature="func (v *Validator) ValidateCaller(ctx context.Context, accessToken, proof string, binding RequestBinding) (Caller, error)" source="internal/authentication/authentication.go">
@@ -480,21 +479,19 @@
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-AVAILABILITY-GATE" name="AvailabilityService.RequireEnabled" module_ref="MC36-AVAILABILITY" status="PROPOSED_NEW" signature="func (s AvailabilityService) RequireEnabled(ctx context.Context) error">
-      <INPUTS>Request context.</INPUTS><OUTPUTS>Nil only when administrative Chat state is enabled; typed error otherwise.</OUTPUTS>
-      <PRECONDITIONS>Authoritative state reader is configured.</PRECONDITIONS>
-      <POSTCONDITIONS>Disabled state denies operations, history, token resolution and new registrations; state-read failure fails closed.</POSTCONDITIONS>
-      <FAILURE_BEHAVIOR>Return a non-disclosing error; never treat unknown state as enabled.</FAILURE_BEHAVIOR>
-      <SIDE_EFFECTS>Read administrative state only.</SIDE_EFFECTS>
-      <INTENT>Determine whether protected Chat operations may proceed now.</INTENT>
-      <RESPONSIBILITY>Read authoritative Chat enabled state and deny protected operations when disabled or unknown.</RESPONSIBILITY>
-      <NON_RESPONSIBILITIES>Do not own the administrative control plane or promise forced subscription teardown.</NON_RESPONSIBILITIES>
+      <INPUTS>Validated immutable ChatRuntimeConfig.</INPUTS><OUTPUTS>Nil only when -chat-enabled is true; CHAT_DISABLED otherwise.</OUTPUTS>
+      <PRECONDITIONS>Startup configuration validation has completed successfully; -chat-enabled defaults to false.</PRECONDITIONS>
+      <POSTCONDITIONS>Disabled Chat denies protected operations, history, wakeToken resolution and new push-subscription registrations. The gate does not query a database or remote state provider.</POSTCONDITIONS>
+      <FAILURE_BEHAVIOR>Return the non-disclosing CHAT_DISABLED error when the configured value is false.</FAILURE_BEHAVIOR>
+      <SIDE_EFFECTS>Read immutable in-process configuration only.</SIDE_EFFECTS>
+      <INTENT>Determine whether protected Chat operations may proceed under the startup configuration.</INTENT>
+      <RESPONSIBILITY>Check the validated -chat-enabled flag.</RESPONSIBILITY>
+      <NON_RESPONSIBILITIES>Do not own a database/admin control plane, expose a live toggle or force-close active ntfy subscriptions.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>No state changes.</STATE_CHANGES>
-      <INVARIANTS>Unknown availability is never treated as enabled.</INVARIANTS>
-      <TEST_PROPERTIES>Verify enabled allows the gate; disabled and read failure deny it.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Disabled or unknown Chat state denies protected operations, history, wakeToken resolution and new registrations.</BUSINESS_RULES>
-
-
-      <TRACE refs="MC36-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F08 DP36-ERR-CHAT-DISABLED"/>
+      <INVARIANTS>Configuration is immutable while the process runs; changes take effect only after restart.</INVARIANTS>
+      <TEST_PROPERTIES>Default false denies; true permits the availability gate; malformed flag input prevents startup.</TEST_PROPERTIES>
+      <BUSINESS_RULES>Disabled Chat denies protected operations, history, wakeToken resolution and new push-subscription registrations.</BUSINESS_RULES>
+      <TRACE refs="MC36-AVAILABILITY DP36-F01 DP36-F04 DP36-F05 DP36-F08 REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-ENABLED TD36-CHAT-STATE MC36-I-F01 MC36-I-F04 MC36-I-F05 MC36-I-F08 DP36-ERR-CHAT-DISABLED DP36-HTTP-ERR-CHAT-DISABLED"/>
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-POLICY-AUTHORIZE" name="PolicyService.Authorize" module_ref="MC36-POLICY" status="PROPOSED_NEW" signature="func (s PolicyService) Authorize(ctx context.Context, in AuthorizationInput) error">
@@ -692,13 +689,13 @@
     <FUNCTION_CONTRACT id="FC36-MESSAGE-SEND" name="MessageService.Send" module_ref="MC36-MESSAGE" status="PROPOSED_NEW" signature="func (s MessageService) Send(ctx context.Context, caller CallerContext, conversation ConversationID, input SendMessageInput) (StoredMessage, error)">
       <INPUTS>Validated caller context, conversation identifier, message payload, optional document ID/title metadata and idempotency key.</INPUTS><OUTPUTS>Committed message and its stable conversation-scoped ordinal.</OUTPUTS>
       <PRECONDITIONS>Caller identity, availability and current membership are validated; text is at most 16384 UTF-8 bytes; JSON request is at most 65536 bytes.</PRECONDITIONS>
-      <POSTCONDITIONS>Message, monotonic ordinal, idempotency outcome and one durable delivery-outbox intent per eligible recipient commit atomically. Identical replay returns the prior result and creates no new intent; differing replay conflicts.</POSTCONDITIONS>
+      <POSTCONDITIONS>Message, monotonic ordinal, idempotency outcome and one durable delivery-outbox intent per eligible account-owned subscription commit atomically. Identical replay returns the prior result and creates no new intent; differing replay conflicts.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>No partial message on validation/transaction failure. Delivery failure or UNKNOWN never rolls back committed history and does not change the successful result for a committed message; outcome is recorded separately.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>One database transaction followed by a non-blocking worker wake signal; no network I/O on the request path.</SIDE_EFFECTS>
       <INTENT>Persist one logical message and make durable background delivery work available after commit.</INTENT>
       <RESPONSIBILITY>Derive sender from caller context, validate input, and coordinate atomic message/outbox persistence with a non-blocking post-commit signal.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Do not trust client sender identity, copy document content, expose metadata in wake payload, wait for delivery or roll back committed history on delivery failure.</NON_RESPONSIBILITIES>
-      <STATE_CHANGES>Commit message/order/idempotency/outbox intents first; signal the background worker only for a new logical message.</STATE_CHANGES>
+      <STATE_CHANGES>Commit message/order/idempotency and one outbox intent per eligible account-owned subscription first; signal the background worker only for a new logical message.</STATE_CHANGES>
       <INVARIANTS>Same-key identical replay returns original result and creates no duplicate intent; conflicting replay conflicts; payload carries only version and wakeToken; response does not wait for network delivery.</INVARIANTS>
       <TEST_PROPERTIES>Verify limits, idempotent replay, conflict, atomic outbox commit, non-blocking response and terminal UNKNOWN handling.</TEST_PROPERTIES>
       <BUSINESS_RULES>Text maximum is 16384 UTF-8 bytes and JSON body maximum is 65536 bytes; identical idempotency replay returns the original result and conflicting replay conflicts.</BUSINESS_RULES>
@@ -745,16 +742,16 @@
       <INPUTS>Server-derived sender account, conversation identifier and validated message/idempotency input.</INPUTS>
       <OUTPUTS>The committed message and stable original idempotency result.</OUTPUTS>
       <PRECONDITIONS>The service has authenticated and authorized the caller; sender identity is derived from CallerContext, not client input.</PRECONDITIONS>
-      <POSTCONDITIONS>Message ordering, message persistence, idempotency result and one durable delivery-outbox intent per eligible recipient commit atomically. Identical replay returns the original result without creating another intent; different content under the same key conflicts.</POSTCONDITIONS>
+      <POSTCONDITIONS>Message ordering, message persistence, idempotency result and one durable delivery-outbox intent per eligible account-owned subscription commit atomically. Identical replay returns the original result without creating another intent; different content under the same key conflicts.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Transaction failure leaves no partial message, idempotency record or outbox intent and cannot trigger publication.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>One PostgreSQL transaction; no external network calls.</SIDE_EFFECTS>
       <INTENT>Atomically persist one message, its idempotency result and recipient delivery intents.</INTENT>
       <RESPONSIBILITY>Use the server-derived sender and serialize message ordering with membership mutation.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Do not accept CallerContext or perform external network calls inside the transaction.</NON_RESPONSIBILITIES>
-      <STATE_CHANGES>Commit message, order, idempotency result and per-recipient outbox intents together.</STATE_CHANGES>
+      <STATE_CHANGES>Commit message, order, idempotency result and per-subscription outbox intents together.</STATE_CHANGES>
       <INVARIANTS>A failed transaction leaves no partial message/outbox; replay cannot create a second logical message or duplicate delivery intent.</INVARIANTS>
       <TEST_PROPERTIES>Verify concurrent same-key requests, identical replay, conflicting replay, outbox atomicity and rollback.</TEST_PROPERTIES>
-      <BUSINESS_RULES>Message, conversation order, idempotency result and recipient outbox intents commit atomically; no publication occurs before commit.</BUSINESS_RULES>
+      <BUSINESS_RULES>Message, conversation order, idempotency result and one outbox intent per eligible account-owned subscription commit atomically; sender-owned subscriptions are excluded and no publication occurs before commit.</BUSINESS_RULES>
       <TRACE refs="MC36-MESSAGE MC36-PERSISTENCE MC36-REALTIME DP36-F02 DP36-D05 REQ32-MESSAGE REQ32-LIMITS DP36-TX-MESSAGE DP36-TX-DELIVERY-OUTBOX MC36-I-F02 DP36-ERR-IDEMPOTENT-REPLAY"/>
     </FUNCTION_CONTRACT>
     <FUNCTION_CONTRACT id="FC36-HISTORY-PAGE" name="HistoryReadService.ReadPage" module_ref="MC36-HISTORY-READ" status="PROPOSED_NEW" signature="func (s HistoryReadService) ReadPage(ctx context.Context, caller CallerContext, conversation ConversationID, after int64, limit int) (HistoryPage, error)">
@@ -812,27 +809,27 @@
       <TRACE refs="MC36-HISTORY-READ MC36-PERSISTENCE DP36-F06 REQ32-READ REQ32-MEMBERSHIP DP36-TX-READ-MARKER MC36-I-F06 DP36-ERR-REVOKED-MEMBER"/>
     </FUNCTION_CONTRACT>
 
-    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REGISTER" name="SubscriptionService.Register" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) error">
-      <INPUTS>Authenticated caller context, the complete Endpoint URL returned by UnifiedPush registration, p256dh public key and auth secret.</INPUTS><OUTPUTS>Success or non-disclosing validation/authorization/storage error.</OUTPUTS>
+    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REGISTER" name="SubscriptionService.Register" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Register(ctx context.Context, caller CallerContext, input PushSubscription) (SubscriptionID, error)">
+      <INPUTS>Authenticated caller context and JSON fields endpoint plus keys.p256dh and keys.auth.</INPUTS><OUTPUTS>Opaque SubscriptionID only; Endpoint and encryption secrets are never returned.</OUTPUTS>
       <PRECONDITIONS>Caller has valid session-bound DPoP; Chat is enabled; Endpoint passes exact-origin and pinned-format validation; encryption material is valid.</PRECONDITIONS>
-      <POSTCONDITIONS>Protected Endpoint-only subscription data is associated with the authenticated account. No membership or history rights are granted.</POSTCONDITIONS>
+      <POSTCONDITIONS>One new protected subscription record is owned by the authenticated AccountID; an account may own an unbounded number of records. Return its opaque SubscriptionID only. No membership or history rights are granted.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Invalid Endpoint or disabled Chat results in no subscription write.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Protected subscription persistence only.</SIDE_EFFECTS>
       <INTENT>Register the authenticated account's UnifiedPush destination.</INTENT>
       <RESPONSIBILITY>Validate availability, the complete Endpoint and encryption material before persistence.</RESPONSIBILITY>
-      <NON_RESPONSIBILITIES>Do not grant membership/history rights, store a separate Topic or expose credentials.</NON_RESPONSIBILITIES>
+      <NON_RESPONSIBILITIES>Do not grant membership/history rights, store a separate Topic, introduce Device/DeviceID or expose Endpoint/encryption credentials.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>Create one protected subscription record for the caller.</STATE_CHANGES>
       <INVARIANTS>Only HTTPS Endpoint URLs at the configured ntfy origin and matching the pinned format are accepted; Endpoint is stored unchanged.</INVARIANTS>
       <TEST_PROPERTIES>Verify disabled state and invalid/out-of-origin/wrong-format Endpoint produce no write.</TEST_PROPERTIES>
       <BUSINESS_RULES>Registration is denied while Chat is disabled; validate the exact configured origin and ntfy Android v1.25.2 Endpoint path/query format.</BUSINESS_RULES>
-      <TRACE refs="MC36-SUBSCRIPTION MC36-IDENTITY MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG DP36-TX-SUBSCRIPTION MC36-I-F02 MC36-I-F04 MC36-I-F08 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED"/>
-      <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-IDENTITY MC36-AVAILABILITY MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ36-NOTIFICATION REQ36-CHAT-STATE TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG TD36-CHAT-ENABLED DP36-TX-SUBSCRIPTION DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA DP36-HTTP-ERROR-MAPPING MC36-I-F02 MC36-I-F04 MC36-I-F08 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED DP36-HTTP-ERR-VALIDATION DP36-HTTP-ERR-CHAT-DISABLED"/>
+      <ROUTE_STATUS>Proposed POST /conversations/push-subscriptions; JSON schema is in DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA. The route and schema remain pending explicit Project Owner approval; OPEN-002 remains a blocker.</ROUTE_STATUS>
     </FUNCTION_CONTRACT>
 
-    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REPLACE" name="SubscriptionService.Replace" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, input PushSubscription) error">
-      <INPUTS>Authenticated caller context, complete replacement Endpoint URL returned by UnifiedPush registration, and replacement encryption material.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
-      <PRECONDITIONS>Current identity and availability pass; new Endpoint passes exact-origin and pinned-format validation.</PRECONDITIONS>
-      <POSTCONDITIONS>Only the authenticated account's active subscription is replaced atomically; no other account's subscription is modified.</POSTCONDITIONS>
+    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REPLACE" name="SubscriptionService.Replace" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Replace(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID, input PushSubscription) error">
+      <INPUTS>Authenticated caller context, path subscriptionId, and JSON fields endpoint plus keys.p256dh and keys.auth.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
+      <PRECONDITIONS>Current DPoP identity and Chat availability pass; subscriptionId resolves within the authenticated AccountID scope; new Endpoint and encryption material pass validation.</PRECONDITIONS>
+      <POSTCONDITIONS>Only the selected subscription record owned by the authenticated AccountID is replaced atomically; other records and accounts are unchanged.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Invalid replacement preserves the existing valid subscription.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Protected subscription persistence only.</SIDE_EFFECTS>
       <INTENT>Replace the authenticated account's delivery destination.</INTENT>
@@ -842,18 +839,18 @@
       <INVARIANTS>Invalid replacement preserves the prior valid subscription; Endpoint is stored unchanged and no separate Topic is accepted.</INVARIANTS>
       <TEST_PROPERTIES>Verify invalid input leaves the previous subscription unchanged.</TEST_PROPERTIES>
       <BUSINESS_RULES>Validate the Endpoint origin and pinned format before writing; failed replacement leaves the previous valid subscription intact.</BUSINESS_RULES>
-      <TRACE refs="MC36-SUBSCRIPTION MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG DP36-TX-SUBSCRIPTION MC36-I-F04 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED"/>
-      <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-ENDPOINT-SECURITY MC36-PERSISTENCE DP36-F04 REQ32-AUTH REQ36-NOTIFICATION TD36-REGISTRATION TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG TD36-CHAT-ENABLED DP36-TX-SUBSCRIPTION DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA DP36-HTTP-ERROR-MAPPING MC36-I-F04 DP36-ERR-INVALID-ENDPOINT DP36-ERR-CHAT-DISABLED DP36-HTTP-ERR-VALIDATION DP36-HTTP-ERR-NOT-FOUND"/>
+      <ROUTE_STATUS>Proposed PUT /conversations/push-subscriptions/{subscriptionId}; uses the shared request schema in DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA and proposes 204 No Content. The route/schema remain pending explicit Project Owner approval; OPEN-002 remains a blocker.</ROUTE_STATUS>
     </FUNCTION_CONTRACT>
 
-    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REMOVE" name="SubscriptionService.Remove" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext) error">
-      <INPUTS>Authenticated caller context.</INPUTS><OUTPUTS>Success or typed error.</OUTPUTS>
-      <PRECONDITIONS>Caller identity is validated; target account is derived only from caller context.</PRECONDITIONS>
-      <POSTCONDITIONS>Only the authenticated account's subscription is removed; conversation membership and history permissions are unchanged.</POSTCONDITIONS>
+    <FUNCTION_CONTRACT id="FC36-SUBSCRIPTION-REMOVE" name="SubscriptionService.Remove" module_ref="MC36-SUBSCRIPTION" status="PROPOSED_NEW" signature="func (s SubscriptionService) Remove(ctx context.Context, caller CallerContext, subscriptionID SubscriptionID) error">
+      <INPUTS>Authenticated caller context and path subscriptionId.</INPUTS><OUTPUTS>204 No Content on success, or mapped non-disclosing error.</OUTPUTS>
+      <PRECONDITIONS>Current DPoP identity and Chat availability pass; subscriptionId resolves within the authenticated AccountID scope.</PRECONDITIONS>
+      <POSTCONDITIONS>Only the selected subscription record owned by the authenticated AccountID is removed; conversation membership and history permissions are unchanged.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Storage failure is reported without disclosing subscription secrets.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Protected subscription deletion only.</SIDE_EFFECTS>
       <INTENT>Remove the authenticated account's delivery destination.</INTENT>
-      <RESPONSIBILITY>Derive target account only from validated caller context.</RESPONSIBILITY>
+      <RESPONSIBILITY>Derive AccountID only from validated caller context and delete the specified subscription record within that account's scope.</RESPONSIBILITY>
       <NON_RESPONSIBILITIES>Do not change conversation membership, history permissions or other accounts' subscriptions.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>Delete the caller's protected subscription record.</STATE_CHANGES>
       <INVARIANTS>Subscription removal does not revoke or grant Chat membership.</INVARIANTS>
@@ -861,8 +858,8 @@
       <BUSINESS_RULES>Removal affects only the authenticated account's subscription and does not change Chat membership or history rights.</BUSINESS_RULES>
 
 
-      <TRACE refs="MC36-SUBSCRIPTION MC36-PERSISTENCE REQ32-AUTH TD36-REGISTRATION DP36-F01 MC36-I-F01"/>
-      <ROUTE_STATUS>Exact HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+      <TRACE refs="MC36-SUBSCRIPTION MC36-PERSISTENCE REQ32-AUTH TD36-REGISTRATION TD36-CHAT-ENABLED DP36-TX-SUBSCRIPTION DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-ERROR-MAPPING MC36-I-F01 DP36-HTTP-ERR-NOT-FOUND DP36-HTTP-ERR-CHAT-DISABLED"/>
+      <ROUTE_STATUS>Proposed DELETE /conversations/push-subscriptions/{subscriptionId}; proposes 204 No Content. The route remains pending explicit Project Owner approval; OPEN-002 remains a blocker.</ROUTE_STATUS>
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-ENDPOINT-VALIDATE" name="PushEndpointValidator.Validate" module_ref="MC36-ENDPOINT-SECURITY" status="PROPOSED_NEW" signature="Validate(rawEndpoint string, configuredOrigin *url.URL) (*url.URL, error)">
@@ -930,8 +927,8 @@
       <BUSINESS_RULES>Resolution is repeatable and non-consuming; each protected request rechecks identity, availability, membership and visibility.</BUSINESS_RULES>
 
 
-      <TRACE refs="MC36-WAKETOKEN MC36-POLICY MC36-AVAILABILITY DP36-D12 DP36-F05 DP36-F07 DP36-F08 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN MC36-I-F05 MC36-I-F07 MC36-I-F08 DP36-ERR-INVALID-TOKEN DP36-ERR-CHAT-DISABLED DP36-ERR-REVOKED-MEMBER DP36-TX-TOKEN DP36-ERR-STALE-AUTH"/>
-      <ROUTE_STATUS>Exact protected HTTP method and path are unresolved and must not be invented by implementation.</ROUTE_STATUS>
+      <TRACE refs="MC36-WAKETOKEN MC36-POLICY MC36-AVAILABILITY DP36-D12 DP36-F05 DP36-F07 DP36-F08 REQ36-WAKE-TOKEN REQ32-AUTH REQ32-MEMBERSHIP REQ36-CHAT-STATE INV36-WAKE-TOKEN TD36-TOKEN TD36-CHAT-ENABLED MC36-I-F05 MC36-I-F07 MC36-I-F08 DP36-ERR-INVALID-TOKEN DP36-ERR-CHAT-DISABLED DP36-ERR-REVOKED-MEMBER DP36-TX-TOKEN DP36-ERR-STALE-AUTH DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-ERROR-MAPPING DP36-HTTP-ERR-NOT-FOUND"/>
+      <ROUTE_STATUS>POST /conversations/wake-token/resolve. Request JSON is {"wakeToken":"string"}; success JSON is {"conversationId":"string"}. Require current session-bound DPoP, -chat-enabled and current membership/visibility checks. Invalid, stale, unknown or unauthorized token maps to NOT_FOUND/404 without protected disclosure. Exact schemas and mapping are pinned in DP36-HTTP-WAKETOKEN-RESOLVE and DP36-HTTP-ERROR-MAPPING; artifact revisions remain PROPOSED/PENDING.</ROUTE_STATUS>
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-WAKE-ENCRYPT" name="RFC8291WebPushEncryptor.Encrypt" module_ref="MC36-REALTIME" status="PROPOSED_NEW" signature="func (e RFC8291WebPushEncryptor) Encrypt(subscription PushSubscription, payload WakePayload) (EncryptedWakePayload, error)">
@@ -953,7 +950,7 @@
     </FUNCTION_CONTRACT>
 
     <FUNCTION_CONTRACT id="FC36-REALTIME-NOTIFY" name="RealtimeWakeService.NotifyCommitted" module_ref="MC36-REALTIME" status="PROPOSED_NEW" signature="func (s RealtimeWakeService) NotifyCommitted(ctx context.Context, event CommittedMessage)">
-      <INPUTS>Event for a newly committed message; its per-recipient delivery-outbox intents were already committed atomically with the message.</INPUTS><OUTPUTS>None; this method only signals the background worker.</OUTPUTS>
+      <INPUTS>Event for a newly committed message; one per-subscription delivery-outbox intent for each eligible account-owned subscription was already committed atomically with the message.</INPUTS><OUTPUTS>None; this method only signals the background worker.</OUTPUTS>
       <PRECONDITIONS>Message transaction has committed; replay status is known; durable outbox intents exist for a new logical message; no external network call occurs in the message transaction.</PRECONDITIONS>
       <POSTCONDITIONS>Returns immediately after a non-blocking worker wake signal. A dropped/coalesced signal cannot lose work because the durable outbox is authoritative and scanned by the worker.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Does not turn a committed message into an HTTP failure; no delivery result is awaited or returned here.</FAILURE_BEHAVIOR>
@@ -971,7 +968,7 @@
       <INPUTS>Service-lifecycle context, durable delivery-outbox repository, endpoint validator, encryptor, publisher, trusted ntfy origin and positive timeout.</INPUTS>
       <OUTPUTS>Returns only on lifecycle cancellation or a fatal worker error.</OUTPUTS>
       <PRECONDITIONS>Message/outbox transaction contract is in place; configured origin and timeout have passed startup validation.</PRECONDITIONS>
-      <POSTCONDITIONS>Worker recovers interrupted claimed attempts as terminal UNKNOWN, claims each pending per-recipient intent durably before HTTP, rechecks current eligibility, marks an ineligible recipient SKIPPED without HTTP, ensures the token mapping is durable, encrypts and publishes once, and persists a terminal outcome.</POSTCONDITIONS>
+      <POSTCONDITIONS>Worker recovers interrupted claimed attempts as terminal UNKNOWN, claims each pending per-subscription intent durably before HTTP, rechecks current account and subscription eligibility, marks an ineligible subscription SKIPPED without HTTP, ensures the token mapping is durable, encrypts and publishes once, and persists a terminal outcome.</POSTCONDITIONS>
       <FAILURE_BEHAVIOR>Apply a per-request context timeout from -ntfy-timeout and propagate worker cancellation. A timeout, cancellation or transport ambiguity after attempt start is UNKNOWN. No FAILED or UNKNOWN intent is automatically retried.</FAILURE_BEHAVIOR>
       <SIDE_EFFECTS>Short database transactions to claim intents and record outcomes, token mapping persistence, and outbound HTTPS requests only after the claim transaction commits.</SIDE_EFFECTS>
       <INTENT>Dispatch durable wake intents asynchronously without holding up the message response.</INTENT>
@@ -979,16 +976,16 @@
       <NON_RESPONSIBILITIES>Do not persist messages, publish inside a database transaction, follow redirects, retry an attempt, or treat transport acceptance as authorization.</NON_RESPONSIBILITIES>
       <STATE_CHANGES>Pending intent becomes claimed and then PUSH_DELIVERED, PUSH_FAILED, SKIPPED or UNKNOWN; UNKNOWN is terminal.</STATE_CHANGES>
       <INVARIANTS>At most one outbound attempt per durable recipient intent; outbox is durable across restart; committed message state is never rolled back; history remains the recovery path.</INVARIANTS>
-      <TEST_PROPERTIES>Verify startup recovery marks interrupted claims UNKNOWN without affecting live claims, per-recipient claim uniqueness, eligibility recheck, timeout/cancellation, redirect rejection, terminal UNKNOWN and absence of automatic retry.</TEST_PROPERTIES>
+      <TEST_PROPERTIES>Verify startup recovery marks interrupted claims UNKNOWN without affecting live claims, per-subscription claim uniqueness, eligibility recheck, timeout/cancellation, redirect rejection, terminal UNKNOWN and absence of automatic retry.</TEST_PROPERTIES>
       <BUSINESS_RULES>Use the full Endpoint URL unchanged. No automatic retries in the first implementation, including UNKNOWN.</BUSINESS_RULES>
       <TRACE refs="MC36-REALTIME MC36-PERSISTENCE MC36-WAKETOKEN MC36-ENDPOINT-SECURITY DP36-F02 DP36-D09 DP36-TX-MESSAGE DP36-TX-DELIVERY-OUTBOX DP36-S-PUSH-SKIPPED DP36-ST-PUSH-SKIPPED DP36-ERR-PUSH-FAILURE REQ32-REALTIME REQ32-MEMBERSHIP REQ36-WAKE-TOKEN TD36-NTFY-HTTP TD36-DELIVERY-FAILURE TD36-ENDPOINT-SECURITY MC36-I-F02 MC36-I-F07 MC36-I-F08 DP36-GATE-INTEROP"/>
     </FUNCTION_CONTRACT>
   </FUNCTION_CONTRACTS>
 
   <EXISTING_SYMBOL_DISPOSITION id="CFC36-LEGACY-SYMBOL-MAP">
-    <SYMBOL name="main.runtimeConfig" source="cmd/bfe-chat-service/main.go" current_signature="type runtimeConfig struct{ listen, origin, uds, dsnEnv, migrations string }" target_disposition="REVIEW_CONFIGURATION">Current config lacks target ntfy-origin configuration; do not invent environment variable names without a separate config contract.</SYMBOL>
-    <SYMBOL name="main.parseRuntimeConfig" source="cmd/bfe-chat-service/main.go" current_signature="func parseRuntimeConfig(args []string) (runtimeConfig, error)" target_disposition="REVIEW_CONFIGURATION">Preserve strict validation; add target configuration only after its names and validation rules are approved.</SYMBOL>
-    <SYMBOL name="main.validateRuntimeDependencies" source="cmd/bfe-chat-service/main.go" current_signature="func validateRuntimeDependencies(c runtimeConfig) error" target_disposition="REVIEW_CONFIGURATION">Validate required PostgreSQL, Internal Auth UDS and approved ntfy origin dependencies before startup.</SYMBOL>
+    <SYMBOL name="main.runtimeConfig" source="cmd/bfe-chat-service/main.go" current_signature="type runtimeConfig struct{ listen, origin, uds, dsnEnv, migrations string }" target_disposition="REVIEW_CONFIGURATION">Proposed target configuration includes -chat-enabled (default false), required -ntfy-origin and -ntfy-timeout (default 5s). Chat availability is immutable until restart; no environment-variable names are invented.</SYMBOL>
+    <SYMBOL name="main.parseRuntimeConfig" source="cmd/bfe-chat-service/main.go" current_signature="func parseRuntimeConfig(args []string) (runtimeConfig, error)" target_disposition="REVIEW_CONFIGURATION">Proposed flag parsing validates -chat-enabled as a boolean with default false, validates required -ntfy-origin and positive -ntfy-timeout (default 5s), and fails startup on invalid configuration. These artifact revisions remain pending approval.</SYMBOL>
+    <SYMBOL name="main.validateRuntimeDependencies" source="cmd/bfe-chat-service/main.go" current_signature="func validateRuntimeDependencies(c runtimeConfig) error" target_disposition="REVIEW_CONFIGURATION">Validate required PostgreSQL, Internal Auth UDS, -chat-enabled parsing, required -ntfy-origin and positive -ntfy-timeout before startup.</SYMBOL>
     <SYMBOL name="main.openChatDB" source="cmd/bfe-chat-service/main.go" current_signature="func openChatDB(ctx context.Context, c runtimeConfig) (*sql.DB, error)" target_disposition="REPLACE_OR_ADAPT">Current signature uses database/sql; target Technology selects pgx v5.11.0. Driver adapter and connection type must be decided before implementation.</SYMBOL>
     <SYMBOL name="main.buildHandler" source="cmd/bfe-chat-service/main.go" current_signature="func buildHandler(db *sql.DB, c runtimeConfig) (http.Handler, *centrifuge.Node, error)" target_contract="FC36-HTTP-WIRING" target_disposition="REPLACE">Target wiring must not expose Centrifuge as the Issue 36 realtime transport.</SYMBOL>
     <SYMBOL name="main.run" source="cmd/bfe-chat-service/main.go" current_signature="func run(ctx context.Context, args []string) error" target_disposition="REVIEW_WIRING">Bind the new handler and target dependencies only after their contracts are approved.</SYMBOL>
@@ -1039,10 +1036,10 @@
   <TRACEABILITY_AND_GAPS>
     <RESOLVED_DECISIONS>
       <DECISION id="CFC36-RESOLVED-012" status="RESOLVED" source_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6450202669" decision_owner="Engineering Orchestrator">The baseline inventory was 14 CLASS_CONTRACT elements and 30 FUNCTION_CONTRACT elements. CFC36-002 adds one required background-worker function contract, so the current proposed inventory is 14 classes and 31 functions; no artificial class is added.</DECISION>
-    <DECISION id="CFC36-OPEN-004" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="TD36-NTFY-RUNTIME-CONFIG TD36-ENDPOINT-SECURITY DP36-M-ENDPOINT-SECURITY DP36-F04">The Project Owner-approved decision is represented in proposed TECH36-002: require -ntfy-origin separately from -public-origin; validate an HTTPS origin with a host and optional explicit port, no userinfo/query/fragment, and only an empty or root path. Validate every complete Endpoint independently against that origin. The exact Technology/DevelopmentPlan revisions remain subject to their own review and approval; this is no longer an unresolved design decision.</DECISION>
-       <DECISION id="CFC36-OPEN-009" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="TD36-NTFY-HTTP TD36-DELIVERY-FAILURE DP36-M-REALTIME DP36-ERR-PUSH-FAILURE DP36-MT01 DP36-RISK-EXTERNAL-SIDE-EFFECT DP36-TX-DELIVERY-OUTBOX">The Project Owner-approved decision is represented in TECH36-002 and DP36-003: -ntfy-timeout defaults to 5s and must be positive; worker cancellation is propagated; redirects are rejected; delivery runs after commit in the background without delaying the response; ambiguous outcomes become terminal UNKNOWN and no automatic retry occurs in the first implementation. The durable per-recipient outbox design remains proposed and must pass its gates.</DECISION>
-       <DECISION id="CFC36-OPEN-010" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="DevelopmentPlan.xml" upstream_refs="REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP DP36-M-CONVERSATION DP36-F03 DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-TX-MESSAGE DP36-D14">The Project Owner-approved decision is represented in proposed DP36-003: RenameGroup acquires the conversation lock, checks group kind and active membership/current owner-admin role, renames and commits in one transaction. HideDirect acquires the same conversation-scoped lock as message send, checks direct kind and active membership, upserts the viewer's hidden state and commits in one transaction. HideDirect and incoming-message auto-unhide serialize on that lock; final state follows serialized operation order. DP36-003 still requires its own review and approval.</DECISION>
-       <DECISION id="CFC36-OPEN-011" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml" upstream_refs="TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-REGISTRATION TD36-NTFY-RUNTIME-CONFIG DP36-M-SUBSCRIPTION DP36-D07 DP36-F04">The Project Owner-approved decision is represented in proposed TECH36-002: persist and publish only the complete Endpoint URL returned by UnifiedPush registration; do not accept, store or derive a separate Topic. The pinned ntfy Android v1.25.2 source returns /up followed by 12 ASCII alphanumeric characters and exactly ?up=1; ntfy Server v2.34.0 defines the corresponding UnifiedPush prefix and expected length handling. Validate HTTPS, exact configured-origin equality and the full pinned path/query format, and reject redirects. This closes the separate Endpoint/Topic binding question, not the independent runtime-interoperability gate; TECH36-002 remains subject to its own review and approval.</DECISION>
+    <DECISION id="CFC36-OPEN-004" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="TD36-NTFY-RUNTIME-CONFIG TD36-ENDPOINT-SECURITY DP36-M-ENDPOINT-SECURITY DP36-F04">The Project Owner-approved decision is represented in proposed TECH36-003: require -ntfy-origin separately from -public-origin; validate an HTTPS origin with a host and optional explicit port, no userinfo/query/fragment, and only an empty or root path. Validate every complete Endpoint independently against that origin. The exact Technology/DevelopmentPlan revisions remain subject to their own review and approval; this is no longer an unresolved design decision.</DECISION>
+       <DECISION id="CFC36-OPEN-009" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="TD36-NTFY-HTTP TD36-DELIVERY-FAILURE DP36-M-REALTIME DP36-ERR-PUSH-FAILURE DP36-MT01 DP36-RISK-EXTERNAL-SIDE-EFFECT DP36-TX-DELIVERY-OUTBOX">The Project Owner-approved decision is represented in TECH36-003 and DP36-004: -ntfy-timeout defaults to 5s and must be positive; worker cancellation is propagated; redirects are rejected; delivery runs after commit in the background without delaying the response; ambiguous outcomes become terminal UNKNOWN and no automatic retry occurs in the first implementation. The durable per-subscription outbox design remains proposed and must pass its gates.</DECISION>
+       <DECISION id="CFC36-OPEN-010" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="DevelopmentPlan.xml" upstream_refs="REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP DP36-M-CONVERSATION DP36-F03 DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-TX-MESSAGE DP36-D14">The Project Owner-approved decision is represented in proposed DP36-004: RenameGroup acquires the conversation lock, checks group kind and active membership/current owner-admin role, renames and commits in one transaction. HideDirect acquires the same conversation-scoped lock as message send, checks direct kind and active membership, upserts the viewer's hidden state and commits in one transaction. HideDirect and incoming-message auto-unhide serialize on that lock; final state follows serialized operation order. DP36-004 still requires its own review and approval.</DECISION>
+       <DECISION id="CFC36-OPEN-011" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml" upstream_refs="TD36-NTFY-ACL TD36-ENDPOINT-SECURITY TD36-REGISTRATION TD36-NTFY-RUNTIME-CONFIG DP36-M-SUBSCRIPTION DP36-D07 DP36-F04">The Project Owner-approved decision is represented in proposed TECH36-003: persist and publish only the complete Endpoint URL returned by UnifiedPush registration; do not accept, store or derive a separate Topic. The pinned ntfy Android v1.25.2 source returns /up followed by 12 ASCII alphanumeric characters and exactly ?up=1; ntfy Server v2.34.0 defines the corresponding UnifiedPush prefix and expected length handling. Validate HTTPS, exact configured-origin equality and the full pinned path/query format, and reject redirects. This closes the separate Endpoint/Topic binding question, not the independent runtime-interoperability gate; TECH36-003 remains subject to its own review and approval.</DECISION>
     </RESOLVED_DECISIONS>
     <MODULE_COVERAGE>
       <COVERED module_ref="MC36-HTTP" contract_ref="FC36-HTTP-WIRING CC36-HTTP-HANDLER FC36-HTTP-ENTRY"/>
@@ -1057,18 +1054,18 @@
       <COVERED module_ref="MC36-ENDPOINT-SECURITY" contract_ref="CC36-ENDPOINT-SECURITY FC36-ENDPOINT-VALIDATE FC36-ENDPOINT-CLIENT"/>
       <COVERED module_ref="MC36-WAKETOKEN" contract_ref="CC36-WAKETOKEN FC36-WAKETOKEN-ISSUE FC36-WAKETOKEN-RESOLVE"/>
       <COVERED module_ref="MC36-REALTIME" contract_ref="CC36-REALTIME FC36-WAKE-ENCRYPT FC36-REALTIME-NOTIFY"/>
-      <EXTERNAL_BOUNDARY module_ref="MC36-ANDROID-PUSH" contract_ref="CC36-ANDROID-PUSH-BOUNDARY" status="EXTERNAL_SOURCE_REQUIRED"/>
-      <EXTERNAL_BOUNDARY module_ref="MC36-NOTIFICATION-ACTIVATION" contract_ref="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" status="EXTERNAL_SOURCE_REQUIRED"/>
+      <EXTERNAL_BOUNDARY module_ref="MC36-ANDROID-PUSH" contract_ref="CC36-ANDROID-PUSH-BOUNDARY" status="EXTERNAL_INTEROP_ACCEPTANCE_DEPENDENCY"/>
+      <EXTERNAL_BOUNDARY module_ref="MC36-NOTIFICATION-ACTIVATION" contract_ref="CC36-NOTIFICATION-ACTIVATION-BOUNDARY" status="EXTERNAL_INTEROP_ACCEPTANCE_DEPENDENCY"/>
     </MODULE_COVERAGE>
     <UNRESOLVED_DECISIONS>
-      <DECISION id="CFC36-OPEN-001" status="BLOCKER" upstream_artifact="DevelopmentPlan.xml; Technology.xml" upstream_refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE DP36-M-AVAILABILITY DP36-F08">Identify and document the authoritative provider for administrative Chat enabled/disabled state. REQ36-CHAT-STATE, INV36-CHAT-STATE, TD36-CHAT-STATE, DP36-M-AVAILABILITY and DP36-F08 define the required gate behavior but do not name its provider. Resolve in an approved Technology.xml or DevelopmentPlan.xml decision before implementing ChatStateReader.</DECISION>
-      <DECISION id="CFC36-OPEN-002" status="BLOCKER" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml" upstream_refs="REQ32-AUTH REQ36-NOTIFICATION DP36-M-HTTP DP36-M-SUBSCRIPTION DP36-F04 TD36-REGISTRATION">Specify exact protected HTTP method, path, request schema and response schema for UnifiedPush registration, replacement and removal. The approved requirements and DP36-M-HTTP/DP36-M-SUBSCRIPTION/DP36-F04 require the protected unversioned /conversations API surface but do not define these route contracts. Resolve in approved RequirementsAnalysis.xml or DevelopmentPlan.xml before implementation.</DECISION>
-      <DECISION id="CFC36-OPEN-003" status="BLOCKER" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml" upstream_refs="REQ32-AUTH REQ36-WAKE-TOKEN DP36-M-HTTP DP36-M-WAKETOKEN DP36-F05 DP36-D12 TD36-TOKEN">Specify the exact protected HTTP method, path, request schema and response schema for wakeToken resolution. REQ36-WAKE-TOKEN, TD36-TOKEN, DP36-M-HTTP, DP36-M-WAKETOKEN, DP36-F05 and DP36-D12 do not assign the route contract. Resolve in approved RequirementsAnalysis.xml or DevelopmentPlan.xml before implementation.</DECISION>
+      <DECISION id="CFC36-OPEN-001" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="Technology.xml; DevelopmentPlan.xml" upstream_refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-ENABLED TD36-CHAT-STATE DP36-C10 DP36-M-AVAILABILITY DP36-F08">The Project Owner decision is represented in proposed TECH36-003 and DP36-004: Chat availability comes only from -chat-enabled, default false, loaded at startup and changed only by server restart. No database/admin-service provider is introduced. These artifact revisions remain pending their own approval gates.</DECISION>
+      <DECISION id="CFC36-OPEN-002" status="BLOCKER" upstream_artifact="DevelopmentPlan.xml" upstream_refs="REQ32-AUTH REQ36-NOTIFICATION DP36-M-HTTP DP36-M-SUBSCRIPTION DP36-F04 TD36-REGISTRATION DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-SUBSCRIPTION-REGISTER DP36-HTTP-SUBSCRIPTION-REPLACE DP36-HTTP-SUBSCRIPTION-REMOVE DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA">Proposed routes and JSON schemas are recorded in DP36-004: POST /conversations/push-subscriptions, PUT /conversations/push-subscriptions/{subscriptionId}, and DELETE /conversations/push-subscriptions/{subscriptionId}. Registration returns only subscriptionId; replacement/deletion are scoped to authenticated AccountID. These route/schema details are proposals, not yet explicitly approved. Keep OPEN-002 blocked until the Project Owner approves the exact route and schema contract.</DECISION>
+      <DECISION id="CFC36-OPEN-003" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="DevelopmentPlan.xml" upstream_refs="REQ32-AUTH REQ36-WAKE-TOKEN DP36-M-HTTP DP36-M-WAKETOKEN DP36-F05 DP36-D12 TD36-TOKEN DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-WAKETOKEN-RESOLVE DP36-HTTP-ERROR-MAPPING DP36-HTTP-ERR-NOT-FOUND TD36-CHAT-ENABLED">The Project Owner-approved design contract is POST /conversations/wake-token/resolve with request {"wakeToken":"..."} and success response {"conversationId":"..."}. Require current session-bound DPoP, enabled Chat, and current membership/visibility checks. Invalid, stale, unknown or unauthorized tokens map to NOT_FOUND/404 without conversation identity disclosure. The route is specified in proposed DP36-004; artifact-level QA and approval remain pending.</DECISION>
       
-      <DECISION id="CFC36-OPEN-005" status="QA_VERIFICATION" upstream_artifact="DevelopmentPlan.xml; Technology.xml" upstream_refs="TECH36-PGX DP36-TX-MESSAGE DP36-TX-MEMBERSHIP DP36-TX-TOKEN DP36-TX-READ-MARKER DP36-TX-SUBSCRIPTION DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-TX-DELIVERY-OUTBOX">The five baseline transaction boundaries remain intact. DP36-003 adds the Project Owner-approved RenameGroup and HideDirect boundaries and proposes a separate short transaction for durable delivery-outbox claim/outcome state. Independent QA must verify the complete set, ensure no external network I/O occurs inside database transactions, and confirm interrupted-claim recovery cannot mark a live dispatcher's attempt UNKNOWN before implementation; this item does not authorize implementation.</DECISION>
-      <DECISION id="CFC36-OPEN-006" status="BLOCKER" source_required="BFE Chat Android source repository" upstream_refs="DP36-M-ANDROID-PUSH DP36-M-NOTIFICATION-ACTIVATION MC36-ANDROID-PUSH MC36-NOTIFICATION-ACTIVATION">Provide the actual BFE Chat Android source repository and a revision from which exact Kotlin class/function contracts can be derived for MC36-ANDROID-PUSH and MC36-NOTIFICATION-ACTIVATION. No repository URL or source revision is established by the approved inputs; do not invent Kotlin signatures.</DECISION>
-      <DECISION id="CFC36-OPEN-007" status="BLOCKER" upstream_artifact="RequirementsAnalysis.xml; DevelopmentPlan.xml" upstream_refs="REQ32-API REQ32-AUTH REQ36-CHAT-STATE REQ36-WAKE-TOKEN REQ36-NOTIFICATION DP36-ERR-CHAT-DISABLED DP36-ERR-INVALID-ENDPOINT DP36-ERR-INVALID-TOKEN DP36-ERR-REVOKED-MEMBER DP36-ERR-PUSH-FAILURE">Specify the exact error-code enum and HTTP-status mapping for availability, policy, subscription and wakeToken-resolution failures. Existing failure paths define expected outcomes but do not establish the complete public mapping. Resolve in approved RequirementsAnalysis.xml or DevelopmentPlan.xml before implementation.</DECISION>
-      <DECISION id="CFC36-OPEN-008" status="QA_GATE" upstream_refs="DP36-F01 DP36-F02 DP36-F03 DP36-F04 DP36-F05 DP36-F06 DP36-F07 DP36-F08 DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-TX-DELIVERY-OUTBOX MC36-I-F01 MC36-I-F02 MC36-I-F03 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F07 MC36-I-F08">Independent QA must validate every proposed signature against the pinned RA36-002, proposed TECH36-002 and DP36-003, and MC36-002 graph and check all referenced IDs. This QA gate remains pending; do not treat the Project Owner's decision on these design questions as approval of the resulting artifacts. Do not begin Independent QA while the remaining blocker decisions are open.</DECISION>
+      <DECISION id="CFC36-OPEN-005" status="QA_VERIFICATION" upstream_artifact="DevelopmentPlan.xml; Technology.xml" upstream_refs="TECH36-PGX DP36-TX-MESSAGE DP36-TX-MEMBERSHIP DP36-TX-TOKEN DP36-TX-READ-MARKER DP36-TX-SUBSCRIPTION DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-TX-DELIVERY-OUTBOX">The five baseline transaction boundaries remain intact. DP36-004 preserves the Project Owner-approved RenameGroup and HideDirect boundaries and proposes a separate short transaction for durable delivery-outbox claim/outcome state. Independent QA must verify the complete set, ensure no external network I/O occurs inside database transactions, and confirm interrupted-claim recovery cannot mark a live dispatcher's attempt UNKNOWN before implementation; this item does not authorize implementation.</DECISION>
+      <DECISION id="CFC36-OPEN-006" status="NOT_APPLICABLE_BACKEND_SCOPE" upstream_refs="DP36-M-ANDROID-PUSH DP36-M-NOTIFICATION-ACTIVATION MC36-ANDROID-PUSH MC36-NOTIFICATION-ACTIVATION TECH36-INTEROP-CHECK CFC36-GATE-ANDROID-INTEROP">Android source/Kotlin signatures are not required to specify or review backend contracts and are intentionally not invented. Android push delivery and notification navigation remain a separate downstream interoperability/acceptance dependency tracked by TECH36-INTEROP-CHECK and CFC36-GATE-ANDROID-INTEROP, not a backend blocker.</DECISION>
+      <DECISION id="CFC36-OPEN-007" status="RESOLVED_PENDING_APPROVAL" upstream_artifact="DevelopmentPlan.xml" upstream_refs="REQ32-API REQ32-AUTH REQ36-CHAT-STATE REQ36-WAKE-TOKEN REQ36-NOTIFICATION DP36-HTTP-ERROR-MAPPING DP36-HTTP-ERR-AUTH-INVALID DP36-HTTP-ERR-AUTH-UNAVAILABLE DP36-HTTP-ERR-CHAT-DISABLED DP36-HTTP-ERR-VALIDATION DP36-HTTP-ERR-FORBIDDEN DP36-HTTP-ERR-NOT-FOUND DP36-HTTP-ERR-CONFLICT DP36-HTTP-ERR-METHOD-NOT-ALLOWED DP36-HTTP-ERR-STORAGE-UNAVAILABLE DP36-HTTP-ERR-INTERNAL DP36-ERR-CHAT-DISABLED DP36-ERR-INVALID-ENDPOINT DP36-ERR-INVALID-TOKEN DP36-ERR-REVOKED-MEMBER DP36-ERR-PUSH-FAILURE">The Project Owner-approved public error table is encoded in proposed DP36-004: AUTH_INVALID/401, AUTH_UNAVAILABLE/503, CHAT_DISABLED/503, VALIDATION_ERROR/400, FORBIDDEN/403, NOT_FOUND/404, CONFLICT_409/409, METHOD_NOT_ALLOWED/405, STORAGE_UNAVAILABLE/503 and INTERNAL_ERROR/500. Existing failure paths are aligned with the approved mappings. Artifact-level review and approval remain pending.</DECISION>
+      <DECISION id="CFC36-OPEN-008" status="QA_GATE" upstream_refs="DP36-F01 DP36-F02 DP36-F03 DP36-F04 DP36-F05 DP36-F06 DP36-F07 DP36-F08 DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-TX-DELIVERY-OUTBOX DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-ERROR-MAPPING MC36-I-F01 MC36-I-F02 MC36-I-F03 MC36-I-F04 MC36-I-F05 MC36-I-F06 MC36-I-F07 MC36-I-F08">Independent QA must validate this exact CFC36-003 revision against RA36-002, proposed TECH36-003 and DP36-004, and MC36-002. QA remains pending and is not complete. Do not begin Independent QA while OPEN-002 remains blocked pending explicit approval of the subscription routes and schemas.</DECISION>
       
       
       
@@ -1076,10 +1073,11 @@
   </TRACEABILITY_AND_GAPS>
 
   <VERIFICATION_GATES id="CFC36-GATES">
-    <GATE id="CFC36-GATE-SOURCE-PROVENANCE" status="PASSED">Source signatures and source-file blob SHAs are pinned to commit 1ebf5ee97ed9a2d06f6a4bc901d2c9986b84f398. Upstream artifact blob identities are pinned above; TECH36-002 and DP36-003 remain proposed revisions pending their own gates.</GATE>
-    <GATE id="CFC36-GATE-CONTRACT-COMPLETENESS" status="PENDING" refs="MC36-GRAPH MC36-INTERACTIONS DP36-003 TECH36-002">Requires independent review of all proposed signatures, transaction semantics, dependency direction, route gaps, external Android boundaries, Endpoint-only registration and durable background delivery. The upstream artifacts remain proposed pending their own gates.</GATE>
-    <GATE id="CFC36-GATE-INDEPENDENT-QA" status="PENDING">Independent QA has not yet reviewed CFC36-002 and the exact linked TECH36-002/DP36-003 revisions.</GATE>
-    <GATE id="CFC36-GATE-HUMAN-APPROVAL" status="PENDING">Project Owner approval of CFC36-002 is required after Independent QA passes. Approval of the design decisions does not itself approve this artifact revision.</GATE>
+    <GATE id="CFC36-GATE-SOURCE-PROVENANCE" status="PASSED">Source signatures and source-file blob SHAs are pinned to commit 1ebf5ee97ed9a2d06f6a4bc901d2c9986b84f398. Upstream artifact blob identities are pinned above; TECH36-003 and DP36-004 remain proposed revisions pending their own gates.</GATE>
+    <GATE id="CFC36-GATE-CONTRACT-COMPLETENESS" status="PENDING" refs="MC36-GRAPH MC36-INTERACTIONS DP36-004 TECH36-002 DP36-PUBLIC-HTTP-CONTRACTS DP36-HTTP-ERROR-MAPPING">Requires independent review of all proposed signatures, transaction semantics, dependency direction, approved wakeToken contract, public error map, account-owned multi-subscription model, proposed subscription routes, external Android boundary and durable background delivery. OPEN-002 remains blocked until the subscription route/schema proposal is explicitly approved.</GATE>
+    <GATE id="CFC36-GATE-INDEPENDENT-QA" status="PENDING">Independent QA has not yet reviewed CFC36-003 and the exact linked TECH36-003/DP36-004 revisions.</GATE>
+    <GATE id="CFC36-GATE-HUMAN-APPROVAL" status="PENDING">Project Owner approval of CFC36-003 is required after Independent QA passes. Approval of the design decisions does not itself approve this artifact revision.</GATE>
+    <GATE id="CFC36-GATE-ANDROID-INTEROP" status="NOT_VERIFIED" refs="DP36-M-ANDROID-PUSH DP36-M-NOTIFICATION-ACTIVATION TECH36-INTEROP-CHECK">Android push delivery and notification navigation are downstream external interoperability/acceptance checks. No Kotlin signatures are invented and this dependency does not block backend contract specification. Runtime interoperability remains NOT_VERIFIED.</GATE>
     <GATE id="CFC36-GATE-IMPLEMENTATION" status="BLOCKED">Production implementation, tests, migrations and deployment remain unauthorized. This artifact update is design-only.</GATE>
   </VERIFICATION_GATES>
 </CLASS_FUNCTION_CONTRACTS>
