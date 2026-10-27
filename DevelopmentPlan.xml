@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<DEVELOPMENT_PLAN id="DP-BFE-CHAT-001" status="PROPOSED" approval="PENDING" requirements_source="RequirementsAnalysis.xml" requirements_source_sha="646f1551919c50b7c9b23044d805aa1f4bb77d59" requirements_revision_id="RA36-002" requirements_graph_id="RA36-001" technology_source="Technology.xml" technology_source_sha="235e6b112122cab2685da3f6cfd3902e63b229bf" technology_revision_id="TECH36-003" normative_head_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" development_plan_base_sha="2802e0ccfe4e781c72b23f9df1886f70f4d16fd2" effective_revision="DP36-004" previous_approved_revision="DP36-002" previous_approvals="HISTORICAL_ONLY">
+<DEVELOPMENT_PLAN id="DP-BFE-CHAT-001" status="PROPOSED" approval="PENDING" requirements_source="RequirementsAnalysis.xml" requirements_source_sha="42b7d22c400f7f0060ecad9031624155db0b5470" requirements_revision_id="RA36-003" requirements_graph_id="RA36-001" technology_source="Technology.xml" technology_source_sha="4f22b56522c125aed9a7ff008d8f2a9887372d69" technology_revision_id="TECH36-004" normative_head_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" development_plan_base_sha="2802e0ccfe4e781c72b23f9df1886f70f4d16fd2" effective_revision="DP36-005" previous_approved_revision="DP36-002" previous_approvals="HISTORICAL_ONLY">
 
   <ISSUE32_APPROVAL_PROVENANCE source="project_owner_issue_comments" release_status="NOT_APPROVED">
     <HUMAN_APPROVAL artifact="DevelopmentPlan.xml" comment_url="https://github.com/bogachenko/bfe-chat-service/issues/32#issuecomment-6322940899" reviewed_commit="cf883e5b9c0109bcc950b74ba23f9e19749455ec" />
@@ -36,20 +36,22 @@
 
   <SOURCE_BASELINE id="DP36-SOURCE-BASELINE" role="ORIGINAL_PROPOSAL_BASELINE" commit="3177b476dbd5c790dc1af72ca68d104b625472a7" requirements_blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15" technology_blob_sha="5ed9673000686d5628babd1e765c701c5622f1e0" development_plan_base_blob_sha="2802e0ccfe4e781c72b23f9df1886f70f4d16fd2" grace_repository_path="GRACE.md" grace_repository_presence="NOT_FOUND_AT_BASELINE" normative_grace_copy="USER_PROVIDED_ATTACHMENT">Original proposal baseline retained unchanged for provenance. The active normative source for the proposed Issue #36 architecture is recorded separately in DP36-NORMATIVE-SOURCE. The repository did not contain GRACE.md at the original source commit; the user-provided copy was reread and used as the normative method source.</SOURCE_BASELINE>
   <NORMATIVE_SOURCE id="DP36-NORMATIVE-SOURCE" main_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" requirements_revision_id="RA36-002" requirements_graph_id="RA36-001" requirements_status="HUMAN_APPROVED" requirements_blob_sha="646f1551919c50b7c9b23044d805aa1f4bb77d59" technology_revision_id="TECH36-001" technology_status="HUMAN_APPROVED" technology_blob_sha="5ed9673000686d5628babd1e765c701c5622f1e0" previous_requirements_revision="RA36-001" previous_requirements_commit="3177b476dbd5c790dc1af72ca68d104b625472a7" previous_requirements_blob_sha="0a2503988c6b7fae58b46fda03c5711f68a32e15">Current approved upstream provenance: main HEAD and RequirementsAnalysis blob are pinned above. RA36-002 supersedes RA36-001 while preserving the original graph identifier and historical baseline. The approved DP36-002 baseline used the Technology blob recorded above. The new TECH36-002 amendment is separately tracked below and remains pending artifact-level Human Approval.</NORMATIVE_SOURCE>
-  <REVISION_HISTORY id="DP36-REVISION-HISTORY" previous_approved_revision="DP36-002" current_revision="DP36-004">
+  <REVISION_HISTORY id="DP36-REVISION-HISTORY" previous_approved_revision="DP36-002" current_revision="DP36-005">
     <REVISION id="DP36-REVISION-001" revision="DP36-001" status="HUMAN_APPROVED" commit_sha="152a1a027f3f2db26715e45eb64db23ebbc5902a" blob_sha="9b9f196fade8dfb24be336a1b0508f12e8e00e42">Previous approved architecture revision. Its full content and approval provenance remain preserved at the recorded Git commit and blob.</REVISION>
     <REVISION id="DP36-REVISION-002" revision="DP36-002" status="HUMAN_APPROVED" based_on_revision="DP36-001" baseline_commit="152a1a027f3f2db26715e45eb64db23ebbc5902a" baseline_blob_sha="9b9f196fade8dfb24be336a1b0508f12e8e00e42">Corrects the final step of DP36-F08 to assign protected-history catch-up to DP36-M-HISTORY-READ while retaining reauthorization and current message-visibility checks. No other architecture action is changed.</REVISION>
     <REVISION id="DP36-003" revision="DP36-003" status="PROPOSED" approval="PENDING" based_on_revision="DP36-002" baseline_commit="cfdec98ef02de30493dc8b12125f789a6ca9ef9a" baseline_blob_sha="18fc8abc55d2e67fbadbeb3ec25e8caee3d3878e" technology_revision_id="TECH36-002" technology_blob_sha="8c7c223264a41406e970030cc691a42f13aed415" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6451854447">Records the earlier proposed ntfy configuration, Endpoint-only registration, RenameGroup/HideDirect transaction boundaries and durable background-delivery design. This historical proposed revision remains unapproved.</REVISION>
-    <REVISION id="DP36-REVISION-004" revision="DP36-004" status="PROPOSED" approval="PENDING" based_on_revision="DP36-003" prepared_from_commit="d1ff1f445b7eafb66447151276b6f3a8bb3afd0d" baseline_blob_sha="cb4541a1bcbbd5c1807ffceb48c0fe127ca5353e" technology_revision_id="TECH36-003" technology_blob_sha="235e6b112122cab2685da3f6cfd3902e63b229bf" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702">Adds -chat-enabled runtime semantics, the approved wakeToken HTTP contract and public error mapping, and account-owned unbounded subscriptions. Subscription management routes and schemas are proposed pending explicit route approval. Independent QA and artifact-level Human Approval remain pending.</REVISION>
+    <REVISION id="DP36-REVISION-004" revision="DP36-004" status="PROPOSED" approval="PENDING" based_on_revision="DP36-003" prepared_from_commit="d1ff1f445b7eafb66447151276b6f3a8bb3afd0d" baseline_blob_sha="cb4541a1bcbbd5c1807ffceb48c0fe127ca5353e" technology_revision_id="TECH36-003" technology_blob_sha="235e6b112122cab2685da3f6cfd3902e63b229bf" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702" superseded_by_revision="DP36-005" superseded_by_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453888754">Records the earlier runtime-switch proposal, the wakeToken HTTP contract and public error mapping, and account-owned unbounded subscriptions. The runtime-switch portion is superseded by the Project Owner decision at superseded_by_decision_url. Subscription routes and schemas remain proposals pending explicit route approval; this revision remains unapproved.</REVISION>
+      <REVISION id="DP36-REVISION-005" revision="DP36-005" status="PROPOSED" approval="PENDING" based_on_revision="DP36-004" prepared_from_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b" baseline_blob_sha="3a4620219c957458c6cc421e8f1943f4bb4da85a" requirements_revision_id="RA36-003" requirements_blob_sha="42b7d22c400f7f0060ecad9031624155db0b5470" technology_revision_id="TECH36-004" technology_blob_sha="4f22b56522c125aed9a7ff008d8f2a9887372d69" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453888754" supersedes_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702">Removes the runtime gate module, independent enabled/disabled state model, and application-level disabled-state response path. Subscription register/replace/remove use the normal identity, validation, account-scoped storage, and dependency-health contracts. This revision remains PROPOSED/PENDING; Independent QA and artifact-level Human Approval have not been started or granted by this change.</REVISION>
   </REVISION_HISTORY>
   <ACTIVE_APPROVAL_PROVENANCE status="HISTORICAL_ONLY" applies_to_revision="DP36-002">
     <HUMAN_APPROVAL artifact="DevelopmentPlan.xml" revision="DP36-002" comment_url="https://github.com/bogachenko/bfe-chat-service/pull/59#issuecomment-6425669475" reviewed_commit="193cc4fb8910f38d38078b069d64d21643c2f6ca" />
   </ACTIVE_APPROVAL_PROVENANCE>
   <AMENDMENT_PROVENANCE id="DP36-003-PROVENANCE" status="PROPOSED" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6451854447" based_on_revision="DP36-002" prepared_from_commit="d1488d1c9aac0981e4285cd72924105dce8fb403">The Project Owner approved the decisions recorded in this amendment, but did not approve the resulting DevelopmentPlan.xml revision. Do not treat DP36-003 as HUMAN_APPROVED until its own gates pass.</AMENDMENT_PROVENANCE>
-  <AMENDMENT_PROVENANCE id="DP36-004-PROVENANCE" status="PROPOSED" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702" based_on_revision="DP36-003" prepared_from_commit="d1ff1f445b7eafb66447151276b6f3a8bb3afd0">Records the latest Project Owner decisions. Chat availability is startup configuration only. The wakeToken route and public error mapping are specified; subscription management routes remain proposed pending explicit approval. This amendment is not Independent QA or Human Approval.</AMENDMENT_PROVENANCE>
-  <EFFECTIVE_SPECIFICATION id="DP36-EFFECTIVE" status="PROPOSED" approval="PENDING" architecture_revision_id="DP36-004" previous_architecture_revision="DP36-003" target="ISSUE36_UNIFIED_CONVERSATIONS_NTFY_UNIFIEDPUSH" requirements_ref="RA36-001" requirements_revision_id="RA36-002" requirements_blob_sha="646f1551919c50b7c9b23044d805aa1f4bb77d59" normative_head_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" previous_requirements_revision="RA36-001" technology_ref="TECH36-002" technology_revision_id="TECH36-003" technology_blob_sha="235e6b112122cab2685da3f6cfd3902e63b229bf">DP36-004 is the current proposed architecture amendment. Historical Issue #32 and DP36-002 approvals apply only to their recorded revisions. DP36-004, TECH36-003, and their dependent CFC revision remain pending Independent QA and artifact-level Human Approval.</EFFECTIVE_SPECIFICATION>
+  <AMENDMENT_PROVENANCE id="DP36-004-PROVENANCE" status="SUPERSEDED_PROPOSAL" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702" superseded_by_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453888754" based_on_revision="DP36-003" prepared_from_commit="d1ff1f445b7eafb66447151276b6f3a8bb3afd0">Records the earlier runtime-switch decision and associated subscription model. The runtime-switch portion is superseded by the Project Owner decision at superseded_by_decision_url. The wakeToken route, error mapping and subscription decisions remain subject to their own artifact and route approval gates.</AMENDMENT_PROVENANCE>
+  <AMENDMENT_PROVENANCE id="DP36-005-PROVENANCE" status="PROPOSED" decision_comment_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453888754" supersedes_decision_url="https://github.com/bogachenko/bfe-chat-service/pull/58#issuecomment-6453172702" based_on_revision="DP36-004" prepared_from_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b">Removes the independent Chat-state switch, updates the upstream requirement and technology references, and removes subscription gating and the application-level disabled-state response. This is an artifact revision only; no implementation, tests, Independent QA, or Human Approval is authorized.</AMENDMENT_PROVENANCE>
+  <EFFECTIVE_SPECIFICATION id="DP36-EFFECTIVE" status="PROPOSED" approval="PENDING" architecture_revision_id="DP36-005" previous_architecture_revision="DP36-004" target="ISSUE36_UNIFIED_CONVERSATIONS_NTFY_UNIFIEDPUSH" requirements_ref="RA36-001" requirements_revision_id="RA36-003" requirements_blob_sha="42b7d22c400f7f0060ecad9031624155db0b5470" normative_head_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" previous_requirements_revision="RA36-002" technology_ref="TECH36-004" technology_revision_id="TECH36-004" technology_blob_sha="4f22b56522c125aed9a7ff008d8f2a9887372d69">DP36-005 is the current proposed architecture amendment. Historical Issue #32 and DP36-002 approvals apply only to their recorded revisions. RA36-003, TECH36-004, DP36-005, and their dependent CFC revision remain pending Independent QA and artifact-level Human Approval.</EFFECTIVE_SPECIFICATION>
 
-  <ISSUE36_DEVELOPMENT_REVISION id="DP36-004" status="PROPOSED" approval="PENDING" previous_revision="DP36-003" previous_revision_commit="d1ff1f445b7eafb66447151276b6f3a8bb3afd0d" previous_revision_blob_sha="cb4541a1bcbbd5c1807ffceb48c0fe127ca5353e" requirements_ref="RA36-001" requirements_revision_id="RA36-002" requirements_blob_sha="646f1551919c50b7c9b23044d805aa1f4bb77d59" normative_head_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" previous_requirements_revision="RA36-001" technology_ref="TECH36-002" technology_revision_id="TECH36-003" technology_blob_sha="235e6b112122cab2685da3f6cfd3902e63b229bf" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7">
+  <ISSUE36_DEVELOPMENT_REVISION id="DP36-005" status="PROPOSED" approval="PENDING" previous_revision="DP36-004" previous_revision_commit="6ecd7ffc985fe1de41accedd796e3fff19292d1b" previous_revision_blob_sha="3a4620219c957458c6cc421e8f1943f4bb4da85a" requirements_ref="RA36-001" requirements_revision_id="RA36-003" requirements_blob_sha="42b7d22c400f7f0060ecad9031624155db0b5470" normative_head_commit="7f4137534b42116bf2f9014f107b2367f07ad02a" previous_requirements_revision="RA36-002" technology_ref="TECH36-004" technology_revision_id="TECH36-004" technology_blob_sha="4f22b56522c125aed9a7ff008d8f2a9887372d69" baseline_commit="3177b476dbd5c790dc1af72ca68d104b625472a7">
     <PURPOSE>Define the architecture graph for approved Issue #36 requirements and technology choices, without defining module/function contracts or implementation details.</PURPOSE>
     <SCOPE>One unversioned /conversations resource tree; BFE Drive Internal Auth over UDS with session-bound DPoP; current Chat authorization and membership visibility intervals; direct/group conversations; PostgreSQL message/history/read state and durable wakeToken mapping; ntfy v2.34.0, ntfy Android distributor v1.25.2 and UnifiedPush connector 3.3.5; Android system notification and protected token resolution.</SCOPE>
     <CONSTRAINTS>
@@ -57,29 +59,26 @@
       <CONSTRAINT id="DP36-C02" refs="REQ32-AUTH INV32-DPOP">Every protected Chat request validates session-bound DPoP and independently checks current Chat authorization.</CONSTRAINT>
       <CONSTRAINT id="DP36-C03" refs="REQ32-REALTIME REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-PAYLOAD">The realtime wake payload allowlist is exact: protocol version and opaque wakeToken only. It excludes message text, conversation/account identifiers, document IDs/titles and document content. Document metadata is available only through authorized history.</CONSTRAINT>
       <CONSTRAINT id="DP36-C04" refs="REQ36-WAKE-TOKEN INV36-WAKE-TOKEN TD36-TOKEN">wakeToken is a reusable, non-authorizing conversation reference without arbitrary fixed TTL.</CONSTRAINT>
-      <CONSTRAINT id="DP36-C05" refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-ENABLED TD36-CHAT-STATE">The -chat-enabled boolean defaults to false and is read at startup; changes require server restart. Disabled Chat denies protected operations, history, token resolution and new registrations while existing subscriptions may still receive opaque events.</CONSTRAINT>
+      <CONSTRAINT id="DP36-C05" refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE">No independently switchable Chat enabled/disabled application state exists. Protected operations use the standard DPoP, current-authorization, validation, and dependency-health contracts.</CONSTRAINT>
       <CONSTRAINT id="DP36-C06" refs="TD36-TRANSPORT TD36-WEBPUSH TD36-NTFY-ACL TD36-NTFY-HTTP TECH36-INTEROP-CHECK">ntfy plus UnifiedPush is the sole active realtime transport. Runtime interoperability remains unverified and is a mandatory gate.</CONSTRAINT>
       <CONSTRAINT id="DP36-C08" refs="TD36-NTFY-RUNTIME-CONFIG TD36-ENDPOINT-SECURITY">The required -ntfy-origin is independent of -public-origin; each complete Endpoint must match its HTTPS origin and the pinned ntfy Android Endpoint format.</CONSTRAINT>
       <CONSTRAINT id="DP36-C09" refs="TD36-NTFY-HTTP TD36-DELIVERY-FAILURE">Outbound ntfy requests use -ntfy-timeout defaulting to 5s, propagate cancellation and reject redirects. Delivery runs in the background after commit; ambiguous results are terminal UNKNOWN and no automatic retries occur in the first implementation.</CONSTRAINT>
-      <CONSTRAINT id="DP36-C10" refs="TD36-CHAT-ENABLED TD36-CHAT-STATE REQ36-CHAT-STATE">Chat availability is controlled only by the -chat-enabled runtime flag, defaults to false, is immutable while the process runs, and changes only after server restart. No database/admin-service state provider or Device-based identity is introduced.</CONSTRAINT>
+      <CONSTRAINT id="DP36-C10" refs="TD36-CHAT-STATE REQ36-CHAT-STATE">Service reachability is controlled by process/service availability and infrastructure controls, not an application-level Chat switch. No database/admin-service availability provider or Device-based identity is introduced.</CONSTRAINT>
       <CONSTRAINT id="DP36-C07" refs="REQ32-PRESERVE INV32-PRESERVE INV32-NO-LEGACY TD36-DATA-AND-ACCESS">Target a fresh database; no legacy-data migration, compatibility layer or legacy-client support.</CONSTRAINT>
     </CONSTRAINTS>
 
     <ARCHITECTURE_GRAPH id="DP36-ARCHITECTURE">
       <MODULE id="DP36-M-HTTP" refs="REQ32-API REQ32-LIMITS INV32-ONE-API">
-        <RESPONSIBILITY>Expose the sole unversioned /conversations resource tree, validate request shape and size limits, route operations to identity, availability, authorization and domain modules, and map domain outcomes to HTTP responses.</RESPONSIBILITY>
+        <RESPONSIBILITY>Expose the sole unversioned /conversations resource tree, validate request shape and size limits, route operations to identity, policy and domain modules, and map domain outcomes to HTTP responses.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not authenticate sessions itself, decide membership rights, persist domain state, publish realtime events or expose versioned aliases.</NON_RESPONSIBILITY>
       </MODULE>
       <MODULE id="DP36-M-IDENTITY" refs="REQ32-AUTH INV32-DPOP TECH36-INTERNAL-AUTH">
         <RESPONSIBILITY>Validate each protected request through existing BFE Drive Internal Auth over UDS and require a valid session-bound DPoP proof; supply authenticated account/session context to Chat policy.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not grant Chat membership from account UUID, treat wakeToken as identity, or accept plain Bearer as a substitute for DPoP.</NON_RESPONSIBILITY>
       </MODULE>
-      <MODULE id="DP36-M-AVAILABILITY" refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-ENABLED TD36-CHAT-STATE">
-        <RESPONSIBILITY>Read the validated startup boolean from -chat-enabled (default false) and enforce it as the authoritative Chat availability state for protected operations, history, wakeToken resolution and new push-subscription registrations. The value is immutable for the process lifetime.</RESPONSIBILITY>
-        <NON_RESPONSIBILITY>Does not read a database/admin-service provider, expose a live runtime toggle, or force-close already-active ntfy subscriptions or promise a fixed delivery-stop deadline.</NON_RESPONSIBILITY>
-      </MODULE>
+      
       <MODULE id="DP36-M-POLICY" refs="REQ32-AUTH REQ32-MEMBERSHIP REQ32-HISTORY REQ32-ROLES REQ36-WAKE-TOKEN REQ36-CHAT-STATE">
-        <RESPONSIBILITY>Evaluate current Chat availability, authenticated identity, current membership, role, membership visibility interval and per-message visibility on every protected operation, including token resolution and history retrieval.</RESPONSIBILITY>
+        <RESPONSIBILITY>Evaluate authenticated identity, current membership, role, membership visibility interval and per-message visibility on every protected operation, including token resolution and history retrieval.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>Does not treat notification receipt, topic possession or token possession as authorization; does not reuse a prior authorization decision as a substitute for revalidation.</NON_RESPONSIBILITY>
       </MODULE>
       <MODULE id="DP36-M-CONVERSATION" refs="REQ32-MODEL REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP REQ32-PRESERVE DP36-TX-RENAME-GROUP DP36-TX-HIDE-DIRECT DP36-D14">
@@ -99,7 +98,7 @@
         <NON_RESPONSIBILITY>Does not make authorization decisions independently of policy, migrate legacy production data, grant BFE Drive document rights, or make an external ntfy publish part of a PostgreSQL transaction.</NON_RESPONSIBILITY>
       </MODULE>
       <MODULE id="DP36-M-SUBSCRIPTION" refs="TD36-REGISTRATION TD36-CHAT-STATE TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG REQ32-AUTH REQ36-NOTIFICATION DP36-PUBLIC-HTTP-CONTRACTS">
-        <RESPONSIBILITY>Register, replace and remove protected UnifiedPush subscription records owned by AccountID. Each account may own an unbounded number of subscriptions, each identified by an opaque subscription-record ID. Register, replace and remove through the protected unversioned API, with session-bound DPoP, Chat availability and account-scoped ownership checks. Persist the complete Endpoint URL and encryption material; do not accept/store a separate Topic or introduce Device/DeviceID or device-specific authorization.</RESPONSIBILITY>
+        <RESPONSIBILITY>Register, replace and remove protected UnifiedPush subscription records owned by AccountID. Each account may own an unbounded number of subscriptions, each identified by an opaque subscription-record ID. Register, replace and remove through the protected unversioned API, with session-bound DPoP, endpoint validation where applicable, and account-scoped ownership checks. Persist the complete Endpoint URL and encryption material; do not accept/store a separate Topic or introduce Device/DeviceID or device-specific authorization.</RESPONSIBILITY>
         <NON_RESPONSIBILITY>A subscription is only a delivery destination and does not create conversation membership or grant history access. A subscription ID identifies one record only and is not a device identifier, credential or authorization capability. Does not expose Endpoint, encryption secret or ntfy administrative credentials to other accounts.</NON_RESPONSIBILITY>
       </MODULE>
       <MODULE id="DP36-M-ENDPOINT-SECURITY" refs="TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG REQ32-AUTH">
@@ -132,7 +131,7 @@
 
       <DEPENDENCIES id="DP36-DEPENDENCIES">
         <DEPENDENCY id="DP36-D01" from="DP36-M-HTTP" to="DP36-M-IDENTITY" kind="REQUEST_AUTHENTICATION">Protected routes require identity validation before policy or domain execution.</DEPENDENCY>
-        <DEPENDENCY id="DP36-D02" from="DP36-M-HTTP" to="DP36-M-AVAILABILITY" kind="STATE_GUARD">Protected operations and new registrations require Chat enabled.</DEPENDENCY>
+        
         <DEPENDENCY id="DP36-D03" from="DP36-M-HTTP" to="DP36-M-POLICY" kind="AUTHORIZATION">Every protected operation requires current authorization.</DEPENDENCY>
         <DEPENDENCY id="DP36-D04" from="DP36-M-POLICY" to="DP36-M-CONVERSATION" kind="CURRENT_MEMBERSHIP">Policy reads authoritative current membership, roles and visibility intervals.</DEPENDENCY>
         <DEPENDENCY id="DP36-D05" from="DP36-M-MESSAGE" to="DP36-M-PERSISTENCE" kind="ATOMIC_WRITE">Message, idempotency outcome, conversation order and one durable delivery-outbox intent per eligible account-owned subscription are committed atomically. Idempotent replay creates no duplicate intent.</DEPENDENCY>
@@ -168,8 +167,8 @@
     "conversationId": {"type": "string", "minLength": 1}
   }
 }]]></SUCCESS_RESPONSE>
-        <AUTHORIZATION>Validate the current DPoP-bound session, require -chat-enabled, resolve the durable token mapping, then recheck current account membership and message visibility before returning conversationId. Token possession is not authorization.</AUTHORIZATION>
-        <FAILURE_MAPPING refs="DP36-HTTP-ERROR-MAPPING DP36-HTTP-ERR-NOT-FOUND DP36-HTTP-ERR-VALIDATION DP36-HTTP-ERR-CHAT-DISABLED DP36-HTTP-ERR-AUTH-INVALID DP36-HTTP-ERR-AUTH-UNAVAILABLE">Malformed JSON, missing wakeToken field, wrong field type or other request-schema violations map to VALIDATION_ERROR/400. Invalid authentication maps to AUTH_INVALID/401; unavailable Internal Auth maps to AUTH_UNAVAILABLE/503; disabled Chat maps to CHAT_DISABLED/503. A syntactically valid request containing a malformed, stale, unknown, revoked or otherwise unauthorized token value maps to NOT_FOUND/404 with no conversation identity or protected data disclosed.</FAILURE_MAPPING>
+        <AUTHORIZATION>Validate the current DPoP-bound session, resolve the durable token mapping, then recheck current account membership and message visibility before returning conversationId. Token possession is not authorization.</AUTHORIZATION>
+        <FAILURE_MAPPING refs="DP36-HTTP-ERROR-MAPPING DP36-HTTP-ERR-NOT-FOUND DP36-HTTP-ERR-VALIDATION DP36-HTTP-ERR-AUTH-INVALID DP36-HTTP-ERR-AUTH-UNAVAILABLE">Malformed JSON, missing wakeToken field, wrong field type or other request-schema violations map to VALIDATION_ERROR/400. Invalid authentication maps to AUTH_INVALID/401; unavailable Internal Auth maps to AUTH_UNAVAILABLE/503. A syntactically valid request containing a malformed, stale, unknown, revoked or otherwise unauthorized token value maps to NOT_FOUND/404 with no conversation identity or protected data disclosed.</FAILURE_MAPPING>
       </ROUTE>
       <ROUTE id="DP36-HTTP-SUBSCRIPTION-REGISTER" method="POST" path="/conversations/push-subscriptions" status="PROPOSED_PENDING_ROUTE_APPROVAL" authentication="session-bound DPoP" availability="required">
         <REQUEST_SCHEMA id="DP36-HTTP-SUBSCRIPTION-REGISTER-REQUEST-SCHEMA" media_type="application/json"><![CDATA[{
@@ -215,7 +214,6 @@
       <HTTP_ERROR_MAPPING id="DP36-HTTP-ERROR-MAPPING" status="PROJECT_OWNER_DECISION_RECORDED">
         <ERROR id="DP36-HTTP-ERR-AUTH-INVALID" code="AUTH_INVALID" http_status="401"/>
         <ERROR id="DP36-HTTP-ERR-AUTH-UNAVAILABLE" code="AUTH_UNAVAILABLE" http_status="503"/>
-        <ERROR id="DP36-HTTP-ERR-CHAT-DISABLED" code="CHAT_DISABLED" http_status="503"/>
         <ERROR id="DP36-HTTP-ERR-VALIDATION" code="VALIDATION_ERROR" http_status="400"/>
         <ERROR id="DP36-HTTP-ERR-FORBIDDEN" code="FORBIDDEN" http_status="403"/>
         <ERROR id="DP36-HTTP-ERR-NOT-FOUND" code="NOT_FOUND" http_status="404"/>
@@ -231,10 +229,10 @@
       <FLOW id="DP36-F01" refs="REQ32-API REQ32-AUTH REQ32-ISOLATION INV32-DPOP">
         <STEP order="1" ref="DP36-M-HTTP">Receive a request under /conversations and validate request shape and size before side effects.</STEP>
         <STEP order="2" ref="DP36-M-IDENTITY">Validate session-bound DPoP through Internal Auth over UDS; reject missing, invalid, replayed or misbound proof.</STEP>
-        <STEP order="3" ref="DP36-M-AVAILABILITY">Reject the operation if Chat is disabled.</STEP>
-        <STEP order="4" ref="DP36-M-POLICY">Check current membership, role and visibility for this operation.</STEP>
-        <STEP order="5" ref="DP36-M-CONVERSATION">Execute the allowed direct/group domain operation.</STEP>
-        <STEP order="6" ref="DP36-M-PERSISTENCE">Commit only the authorized state change; unauthorized paths have no protected-data side effects.</STEP>
+        
+        <STEP order="3" ref="DP36-M-POLICY">Check current membership, role and visibility for this operation.</STEP>
+        <STEP order="4" ref="DP36-M-CONVERSATION">Execute the allowed direct/group domain operation.</STEP>
+        <STEP order="5" ref="DP36-M-PERSISTENCE">Commit only the authorized state change; unauthorized paths have no protected-data side effects.</STEP>
       </FLOW>
       <FLOW id="DP36-F02" refs="REQ32-MESSAGE REQ32-DOCUMENT REQ32-REALTIME REQ32-MEMBERSHIP REQ36-WAKE-TOKEN REQ36-NOTIFICATION INV36-OPAQUE-WAKE TD36-DELIVERY-FAILURE TD36-NTFY-HTTP">
         <STEP order="1" ref="DP36-M-MESSAGE">Validate sender, current membership, message limits, optional document ID/title metadata and idempotency key.</STEP>
@@ -246,26 +244,26 @@
       </FLOW>
       <FLOW id="DP36-F03" refs="REQ32-DIRECT REQ32-GROUP REQ32-ROLES REQ32-MEMBERSHIP">
         <STEP order="1" ref="DP36-M-IDENTITY">Authenticate the caller.</STEP>
-        <STEP order="2" ref="DP36-M-POLICY">Check current Chat availability and required role.</STEP>
+        <STEP order="2" ref="DP36-M-POLICY">Check current membership and required role.</STEP>
         <STEP order="3" ref="DP36-M-CONVERSATION">Serialize membership/ownership changes and maintain bounded visibility intervals with exactly one group owner after a successful mutation.</STEP>
         <STEP order="4" ref="DP36-M-PERSISTENCE">Commit membership state and visibility boundary atomically.</STEP>
       </FLOW>
       <FLOW id="DP36-F04" refs="TD36-REGISTRATION TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG REQ32-AUTH REQ36-CHAT-STATE">
         <STEP order="1" ref="DP36-M-IDENTITY">Authenticate registration with session-bound DPoP.</STEP>
-        <STEP order="2" ref="DP36-M-AVAILABILITY">Reject new registration when Chat is disabled.</STEP>
-        <STEP order="3" ref="DP36-M-ENDPOINT-SECURITY">Require HTTPS, exact configured ntfy origin and the pinned full Endpoint URL format (/up plus 12 ASCII alphanumeric characters and exactly ?up=1); reject arbitrary hosts, malformed paths, extra query parameters and redirects.</STEP>
-        <STEP order="4" ref="DP36-M-SUBSCRIPTION">Persist the complete Endpoint and encryption material as one protected subscription record owned by the authenticated AccountID; no Device/DeviceID is created.</STEP>
-        <STEP order="5" ref="DP36-M-HTTP">Return only the opaque subscriptionId for the newly created record; never return Endpoint or encryption secrets.</STEP>
+        
+        <STEP order="2" ref="DP36-M-ENDPOINT-SECURITY">Require HTTPS, exact configured ntfy origin and the pinned full Endpoint URL format (/up plus 12 ASCII alphanumeric characters and exactly ?up=1); reject arbitrary hosts, malformed paths, extra query parameters and redirects.</STEP>
+        <STEP order="3" ref="DP36-M-SUBSCRIPTION">Persist the complete Endpoint and encryption material as one protected subscription record owned by the authenticated AccountID; no Device/DeviceID is created.</STEP>
+        <STEP order="4" ref="DP36-M-HTTP">Return only the opaque subscriptionId for the newly created record; never return Endpoint or encryption secrets.</STEP>
       </FLOW>
       <FLOW id="DP36-F05" refs="REQ32-DOCUMENT REQ32-REALTIME REQ36-NOTIFICATION REQ36-WAKE-TOKEN INV36-OPAQUE-WAKE REQ32-AUTH REQ32-HISTORY TD36-ANDROID-NOTIFICATION">
         <STEP order="1" ref="DP36-M-ANDROID-PUSH">Receive the decrypted wake payload containing exactly protocol version and opaque wakeToken; reject or ignore any payload that violates this allowlist. Document metadata is not transported here.</STEP>
         <STEP order="2" ref="DP36-X-ANDROID-OS">Create a generic Android system notification without protected content or identifiers in visible text.</STEP>
         <STEP order="3" ref="DP36-M-NOTIFICATION-ACTIVATION">On activation, call protected token resolution; do not trust notification-carried conversation identifiers.</STEP>
         <STEP order="4" ref="DP36-M-IDENTITY">Validate current DPoP-bound session.</STEP>
-        <STEP order="5" ref="DP36-M-AVAILABILITY">Reject token resolution if Chat is disabled.</STEP>
-        <STEP order="6" ref="DP36-M-POLICY">Re-check current membership and visibility on every resolution.</STEP>
-        <STEP order="7" ref="DP36-M-WAKETOKEN">Resolve the mapping without consuming or invalidating the token.</STEP>
-        <STEP order="8" ref="DP36-M-HISTORY-READ">After success, fetch cursor-based history filtered to currently visible messages.</STEP>
+        
+        <STEP order="5" ref="DP36-M-POLICY">Re-check current membership and visibility on every resolution.</STEP>
+        <STEP order="6" ref="DP36-M-WAKETOKEN">Resolve the mapping without consuming or invalidating the token.</STEP>
+        <STEP order="7" ref="DP36-M-HISTORY-READ">After success, fetch cursor-based history filtered to currently visible messages.</STEP>
       </FLOW>
       <FLOW id="DP36-F06" refs="REQ32-HISTORY REQ32-DOCUMENT REQ32-READ REQ32-MEMBERSHIP REQ32-AUTH AC32-DOCUMENT">
         <STEP order="1" ref="DP36-M-HISTORY-READ">Use the existing history API as the authoritative catch-up path after reconnect or missed push events.</STEP>
@@ -280,20 +278,15 @@
         <STEP order="4" ref="DP36-M-HISTORY-READ">History remains denied or interval-filtered; failed resolution discloses no message content or conversation identity.</STEP>
       </FLOW>
       <FLOW id="DP36-F08" refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-STATE">
-        <STEP order="1" ref="DP36-M-AVAILABILITY">Disablement makes protected Chat operations, history, token resolution and new registrations unavailable.</STEP>
-        <STEP order="2" ref="DP36-M-REALTIME">An already-active subscription may continue receiving only the approved opaque wake payload; no forced disconnect deadline is assumed.</STEP>
-        <STEP order="3" ref="DP36-M-NOTIFICATION-ACTIVATION">Activation cannot resolve a token while disabled and reveals no conversation identity or content.</STEP>
-        <STEP order="4" ref="DP36-M-HISTORY-READ">After re-enable, recover accumulated messages through protected history, reauthorizing the client and checking current message visibility.</STEP>
+        <STEP order="1" ref="DP36-M-HTTP">The process/service must be reachable to serve a request; no application-level Chat enabled/disabled state is consulted.</STEP>
+        <STEP order="2" ref="DP36-M-IDENTITY">Protected requests validate the current session-bound DPoP proof.</STEP>
+        <STEP order="3" ref="DP36-M-POLICY">Evaluate current membership, role and message visibility before protected access.</STEP>
+        <STEP order="4" ref="DP36-M-PERSISTENCE">Storage or transport dependency failures follow the existing public error contract and must not be converted to an application-level disabled-state response.</STEP>
       </FLOW>
     </DATA_FLOWS>
 
     <STATE_MODELS id="DP36-STATE-MODELS">
-      <STATE_MODEL id="DP36-S-CHAT" refs="REQ36-CHAT-STATE INV36-CHAT-STATE">
-        <STATE id="DP36-S-CHAT-ENABLED" name="ENABLED">Protected operations, history, token resolution and new registrations may proceed after normal checks.</STATE>
-        <STATE id="DP36-S-CHAT-DISABLED" name="DISABLED">Protected operations, history, token resolution and new registrations fail closed; existing subscriptions may receive opaque events only.</STATE>
-        <TRANSITION id="DP36-ST-CHAT-OFF" from="DP36-S-CHAT-ENABLED" to="DP36-S-CHAT-DISABLED">Setting -chat-enabled=false and restarting the server loads the DISABLED state for subsequent protected operations.</TRANSITION>
-        <TRANSITION id="DP36-ST-CHAT-ON" from="DP36-S-CHAT-DISABLED" to="DP36-S-CHAT-ENABLED">Setting -chat-enabled=true and restarting the server loads the ENABLED state and permits fresh authorized operations and history catch-up.</TRANSITION>
-      </STATE_MODEL>
+      
       <STATE_MODEL id="DP36-S-MEMBERSHIP" refs="REQ32-MEMBERSHIP REQ32-HISTORY">
         <STATE id="DP36-S-MEMBER-ACTIVE" name="ACTIVE">Access is restricted to messages inside the active membership interval and current role policy.</STATE>
         <STATE id="DP36-S-MEMBER-REMOVED" name="REMOVED">Subsequent protected operations are denied; new wake publications are not initiated for this membership.</STATE>
@@ -308,8 +301,8 @@
         <STATE id="DP36-S-TOKEN-RESOLUTION-REQUESTED" name="RESOLUTION_REQUESTED">A single protected resolution request is awaiting identity, availability and current membership/visibility checks.</STATE>
         <STATE id="DP36-S-TOKEN-RESOLUTION-ALLOWED" name="RESOLUTION_ALLOWED_FOR_THIS_REQUEST">This request passed all current checks; only this request may receive the resolved conversation reference.</STATE>
         <STATE id="DP36-S-TOKEN-DENIED-CONTEXT" name="RESOLUTION_DENIED_FOR_THIS_REQUEST">This request failed a required check; no conversation identity or content is disclosed. The durable mapping remains unchanged.</STATE>
-        <TRANSITION id="DP36-ST-TOKEN-ALLOW" from="DP36-S-TOKEN-RESOLUTION-REQUESTED" to="DP36-S-TOKEN-RESOLUTION-ALLOWED">Resolve only when DPoP, Chat availability, membership and visibility all pass.</TRANSITION>
-        <TRANSITION id="DP36-ST-TOKEN-DENY" from="DP36-S-TOKEN-RESOLUTION-REQUESTED" to="DP36-S-TOKEN-DENIED-CONTEXT">Invalid authentication, disabled Chat, missing mapping or revoked/insufficient membership denies this request without consuming or invalidating the token.</TRANSITION>
+        <TRANSITION id="DP36-ST-TOKEN-ALLOW" from="DP36-S-TOKEN-RESOLUTION-REQUESTED" to="DP36-S-TOKEN-RESOLUTION-ALLOWED">Resolve only when DPoP, membership and visibility checks pass.</TRANSITION>
+        <TRANSITION id="DP36-ST-TOKEN-DENY" from="DP36-S-TOKEN-RESOLUTION-REQUESTED" to="DP36-S-TOKEN-DENIED-CONTEXT">Invalid authentication, missing mapping or revoked/insufficient membership denies this request without consuming or invalidating the token.</TRANSITION>
       </STATE_MODEL>
       <STATE_MODEL id="DP36-S-MESSAGE-DELIVERY" refs="REQ32-MESSAGE REQ32-REALTIME TD36-DELIVERY-FAILURE">
         <STATE id="DP36-S-MESSAGE-COMMITTED" name="COMMITTED">Message, idempotency result and per-subscription delivery-outbox intents are durable regardless of push outcome.</STATE>
@@ -340,7 +333,7 @@
         <STATE id="DP36-S-SUB-ABSENT" name="UNREGISTERED">No active push destination is stored for this account/device registration.</STATE>
         <STATE id="DP36-S-SUB-ACTIVE" name="REGISTERED">A validated UnifiedPush endpoint and encryption material are stored as protected subscription data.</STATE>
         <STATE id="DP36-S-SUB-REMOVED" name="REMOVED">The destination is no longer eligible for future delivery attempts.</STATE>
-        <TRANSITION id="DP36-ST-SUB-REGISTER" from="DP36-S-SUB-ABSENT" to="DP36-S-SUB-ACTIVE">Registration succeeds only after DPoP, Chat availability and endpoint-origin checks.</TRANSITION>
+        <TRANSITION id="DP36-ST-SUB-REGISTER" from="DP36-S-SUB-ABSENT" to="DP36-S-SUB-ACTIVE">Registration succeeds only after DPoP and endpoint-origin checks; storage failures do not create a partial subscription.</TRANSITION>
         <TRANSITION id="DP36-ST-SUB-REPLACE" from="DP36-S-SUB-ACTIVE" to="DP36-S-SUB-ACTIVE">A validated replacement updates the protected destination data.</TRANSITION>
         <TRANSITION id="DP36-ST-SUB-REMOVE" from="DP36-S-SUB-ACTIVE" to="DP36-S-SUB-REMOVED">Authorized removal disables future delivery attempts to this destination.</TRANSITION>
       </STATE_MODEL>
@@ -412,20 +405,14 @@
       <FAILURE_PATH id="DP36-ERR-INVALID-TOKEN" refs="REQ36-WAKE-TOKEN REQ36-NOTIFICATION INV36-WAKE-TOKEN DP36-HTTP-ERR-NOT-FOUND" public_error_code="NOT_FOUND" http_status="404">
         <TRIGGER>Token is malformed, unknown or has no durable mapping.</TRIGGER>
         <PATH>Fail closed through protected API and return a non-disclosing failure. Do not reveal whether a conversation exists or whether the token was once valid.</PATH>
-        <ACCESS_CHECKS>Validate session-bound DPoP and Chat availability before returning any resolution result.</ACCESS_CHECKS>
+        <ACCESS_CHECKS>Validate session-bound DPoP and current authorization before returning any resolution result.</ACCESS_CHECKS>
         <SIDE_EFFECTS>No navigation, history retrieval, token mutation or protected data disclosure.</SIDE_EFFECTS>
       </FAILURE_PATH>
-      <FAILURE_PATH id="DP36-ERR-CHAT-DISABLED" refs="REQ36-CHAT-STATE INV36-CHAT-STATE TD36-CHAT-ENABLED DP36-HTTP-ERR-CHAT-DISABLED" public_error_code="CHAT_DISABLED" http_status="503">
-        <TRIGGER>Chat is disabled while an old subscription remains active or a notification is tapped.</TRIGGER>
-        <PATH>Deny new operations, history, token resolution and new subscriptions. Existing subscriptions may receive opaque events only. After re-enable, authorized clients catch up through history.</PATH>
-        <ACCESS_CHECKS>Availability gate applies to every protected operation including token resolution.</ACCESS_CHECKS>
-        <SIDE_EFFECTS>No forced transport shutdown deadline, no history disclosure while disabled, and no new subscription registration.</SIDE_EFFECTS>
-        <END_STATE ref="DP36-S-CHAT-DISABLED">Chat stays unavailable until administrative re-enable.</END_STATE>
-      </FAILURE_PATH>
+      
       <FAILURE_PATH id="DP36-ERR-MISSED-PUSH" refs="REQ32-HISTORY REQ32-DOCUMENT REQ32-REALTIME AC32-HISTORY AC32-DOCUMENT">
         <TRIGGER>Client is offline or misses one or more push events.</TRIGGER>
         <PATH>Reconnect and use cursor-based authenticated history; apply current membership visibility intervals and continue from the last valid cursor.</PATH>
-        <ACCESS_CHECKS>Revalidate session, Chat availability and current visibility on every history request; document ID/title metadata follows the same per-message visibility and membership-interval filters as the message.</ACCESS_CHECKS>
+        <ACCESS_CHECKS>Revalidate session-bound DPoP, membership and current visibility on every history request; document ID/title metadata follows the same per-message visibility and membership-interval filters as the message.</ACCESS_CHECKS>
         <SIDE_EFFECTS>Push delivery state is not treated as authoritative message state.</SIDE_EFFECTS>
       </FAILURE_PATH>
       <FAILURE_PATH id="DP36-ERR-INVALID-ENDPOINT" refs="TD36-ENDPOINT-SECURITY TD36-REGISTRATION DP36-HTTP-ERR-VALIDATION" public_error_code="VALIDATION_ERROR" http_status="400">
@@ -437,7 +424,7 @@
       <FAILURE_PATH id="DP36-ERR-STALE-AUTH" refs="REQ32-AUTH REQ36-NOTIFICATION INV32-DPOP DP36-HTTP-ERR-AUTH-INVALID" public_error_code="AUTH_INVALID" http_status="401">
         <TRIGGER>Push arrives but BFE Drive session/DPoP proof is invalid or current Chat membership has changed.</TRIGGER>
         <PATH>Notification may be displayed generically, but activation cannot resolve the token or fetch history until a valid session and current authorization exist. If authorization is denied, do not disclose conversation identity.</PATH>
-        <ACCESS_CHECKS>Revalidate DPoP, Chat availability, membership and visibility; never reuse an earlier authorization decision.</ACCESS_CHECKS>
+        <ACCESS_CHECKS>Revalidate DPoP, membership and visibility; never reuse an earlier authorization decision.</ACCESS_CHECKS>
         <SIDE_EFFECTS>No protected navigation or history fetch on failed authorization.</SIDE_EFFECTS>
       </FAILURE_PATH>
     </FAILURE_PATHS>
@@ -456,7 +443,7 @@
       <MENTAL_SCENARIO id="DP36-MT02" refs="REQ32-MESSAGE AC32-MESSAGE DP36-S-IDEMPOTENCY"><INPUT>Repeat a committed message request with the same key, first with identical content and then with different content.</INPUT><EXPECTED_PATH>Identical content follows DP36-ST-IDEM-REPLAY; changed content follows DP36-ST-IDEM-CONFLICT.</EXPECTED_PATH><EXPECTED_RESULT>Identical replay returns original result without a new logical notification; changed content returns 409 Conflict with no new write.</EXPECTED_RESULT></MENTAL_SCENARIO>
       <MENTAL_SCENARIO id="DP36-MT03" refs="REQ32-MEMBERSHIP REQ36-WAKE-TOKEN AC36-WAKE-TOKEN DP36-ERR-REVOKED-MEMBER"><INPUT>Recipient activates an old opaque event after membership removal.</INPUT><EXPECTED_PATH>Notification activation to identity validation to current availability and membership checks to denied token resolution.</EXPECTED_PATH><EXPECTED_RESULT>No conversation identity or message content is revealed; token is not consumed; history access is denied or interval-filtered.</EXPECTED_RESULT></MENTAL_SCENARIO>
       <MENTAL_SCENARIO id="DP36-MT04" refs="REQ36-WAKE-TOKEN INV36-WAKE-TOKEN DP36-ERR-INVALID-TOKEN"><INPUT>Client submits a malformed or unmapped wakeToken with a valid session.</INPUT><EXPECTED_PATH>Protected token resolution validates DPoP and Chat state, then fails closed on missing mapping.</EXPECTED_PATH><EXPECTED_RESULT>NOT_FOUND/404; no navigation, history request, token mutation or protected data.</EXPECTED_RESULT></MENTAL_SCENARIO>
-      <MENTAL_SCENARIO id="DP36-MT05" refs="REQ36-CHAT-STATE AC36-CHAT-STATE DP36-ERR-CHAT-DISABLED"><INPUT>Chat is disabled while a subscription remains active; an old notification is tapped; Chat is later re-enabled.</INPUT><EXPECTED_PATH>Opaque push may arrive; token resolution and history fail while disabled; after re-enable, client performs a fresh authorized history catch-up.</EXPECTED_PATH><EXPECTED_RESULT>No protected access while disabled; no forced disconnect deadline; history becomes available only after re-enable and current authorization.</EXPECTED_RESULT></MENTAL_SCENARIO>
+      <MENTAL_SCENARIO id="DP36-MT05" refs="REQ36-CHAT-STATE AC36-CHAT-STATE DP36-F04 DP36-TX-SUBSCRIPTION"><INPUT>Register, replace, or remove an account-owned push subscription while the Chat service process is available; then repeat with invalid DPoP, invalid Endpoint input, or unavailable storage.</INPUT><EXPECTED_PATH>Validate DPoP; validate the Endpoint for register/replace; scope the record to authenticated AccountID; persist only after validation. No Chat enabled/disabled gate is consulted. Invalid authentication or Endpoint is rejected; storage failure does not leave partial state.</EXPECTED_PATH><EXPECTED_RESULT>Subscription operations are not gated by a separate Chat state; invalid requests fail closed, valid operations affect only the authenticated account, and dependency failures follow the public error mapping.</EXPECTED_RESULT></MENTAL_SCENARIO>
       <MENTAL_SCENARIO id="DP36-MT06" refs="REQ32-HISTORY REQ32-MEMBERSHIP AC32-HISTORY DP36-ERR-MISSED-PUSH"><INPUT>Client misses notifications while offline and reconnects after membership visibility changed.</INPUT><EXPECTED_PATH>Authenticated cursor history rechecks current membership and filters messages by applicable visibility intervals.</EXPECTED_PATH><EXPECTED_RESULT>Visible messages are recovered in stable order; messages from a removed-membership gap remain hidden.</EXPECTED_RESULT></MENTAL_SCENARIO>
       <MENTAL_SCENARIO id="DP36-MT07" refs="TD36-ENDPOINT-SECURITY TD36-NTFY-RUNTIME-CONFIG TD36-REGISTRATION DP36-ERR-INVALID-ENDPOINT"><INPUT>Client registers an endpoint on an origin other than configured ntfy, or supplies a malformed path, a query other than up=1, or a redirect response.</INPUT><EXPECTED_PATH>Startup validates -ntfy-origin; registration authentication and availability checks precede exact Endpoint format and origin validation; redirect responses are terminal and never followed.</EXPECTED_PATH><EXPECTED_RESULT>No arbitrary or malformed Endpoint is stored or contacted; no Endpoint capability is logged.</EXPECTED_RESULT></MENTAL_SCENARIO>
       <MENTAL_SCENARIO id="DP36-MT08" refs="REQ32-AUTH INV32-DPOP REQ36-NOTIFICATION DP36-ERR-STALE-AUTH"><INPUT>A valid opaque event arrives, but session is expired or DPoP proof is missing/misbound when notification is activated.</INPUT><EXPECTED_PATH>Activation invokes protected API; identity validation fails before token resolution or history retrieval.</EXPECTED_PATH><EXPECTED_RESULT>No protected navigation, conversation identity or message content is returned.</EXPECTED_RESULT></MENTAL_SCENARIO>
@@ -466,11 +453,11 @@
     </MENTAL_SCENARIOS>
 
     <VERIFICATION_GATES id="DP36-VERIFICATION-GATES">
-      <GATE id="DP36-GATE-UPSTREAM" status="PENDING" refs="RA36-001 TECH36-002 TD36-CHAT-ENABLED DP36-PUBLIC-HTTP-CONTRACTS">Requirements remain pinned to RA36-002 blob 646f1551919c50b7c9b23044d805aa1f4bb77d59. TECH36-003 and DP36-004 are proposed revisions, not artifact-level Human Approved. Subscription routes remain proposals pending explicit route approval. This gate remains pending until the current upstream revisions complete their required review and approval.</GATE>
+      <GATE id="DP36-GATE-UPSTREAM" status="PENDING" refs="RA36-001 TD36-CHAT-STATE DP36-PUBLIC-HTTP-CONTRACTS">Requirements are pinned to proposed RA36-003; Technology and DevelopmentPlan revisions TECH36-004 and DP36-005 are PROPOSED/PENDING, not artifact-level Human Approved. Subscription routes remain proposals pending explicit route approval. This gate remains pending until the current upstream revisions complete their required review and approval.</GATE>
       <GATE id="DP36-GATE-INDEPENDENT-QA" status="PENDING" refs="DP36-ARCHITECTURE DP36-DATA-FLOWS DP36-STATE-MODELS DP36-TRANSACTION-BOUNDARIES DP36-FAILURE-PATHS DP36-MENTAL-SCENARIOS DP36-PUBLIC-HTTP-CONTRACTS DP36-MT01 DP36-MT07 DP36-MT10 DP36-MT11">Independent QA must review the exact DP36-004 revision, including transaction boundaries, durable background delivery, account-owned multi-subscription records, proposed subscription routes, approved wakeToken contract and error mapping, Endpoint format and timeout/UNKNOWN policy. Earlier QA does not apply to this revision.</GATE>
       <GATE id="DP36-GATE-INTEROP" status="NOT_VERIFIED" refs="TECH36-INTEROP-CHECK DP36-RISK-INTEROP">Verify runtime interoperability of ntfy Server v2.34.0, ntfy Android v1.25.2 and UnifiedPush connector 3.3.5, RFC 8291 aes128gcm delivery, endpoint-origin enforcement, approved ACL behavior, offline delivery and notification activation. Documentation and mental scenarios are not runtime evidence.</GATE>
       <GATE id="DP36-GATE-DOWNSTREAM-CONTRACTS" status="BLOCKED" refs="DP36-EFFECTIVE DP36-GATE-UPSTREAM DP36-GATE-INDEPENDENT-QA DP36-GATE-HUMAN-APPROVAL">The Project Owner explicitly authorized the current CFC synchronization as a derived-artifact update. This exception does not authorize implementation or make CFC, DP or Technology approved. Production implementation, tests and migrations remain blocked until the current upstream revisions pass Independent QA and receive artifact-level Human Approval.</GATE>
-      <GATE id="DP36-GATE-HUMAN-APPROVAL" status="PENDING" refs="DP36-GATE-UPSTREAM DP36-GATE-INDEPENDENT-QA">Project Owner Human Approval of DP36-004 is not recorded. Do not infer it from approval of the design decisions or from the historical DP36-002 approval.</GATE>
+      <GATE id="DP36-GATE-HUMAN-APPROVAL" status="PENDING" refs="DP36-GATE-UPSTREAM DP36-GATE-INDEPENDENT-QA">Project Owner Human Approval of DP36-005 is not recorded. Do not infer it from approval of the design decisions or from the historical DP36-002 approval.</GATE>
       <GATE id="DP36-GATE-RELEASE" status="OUT_OF_SCOPE" refs="DP36-C07">Release, mergeability, integration conflicts, database destruction, deployment and cutover remain outside Developer authority and belong to Release Manager.</GATE>
     </VERIFICATION_GATES>
   </ISSUE36_DEVELOPMENT_REVISION>
