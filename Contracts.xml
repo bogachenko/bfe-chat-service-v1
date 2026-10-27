@@ -134,7 +134,7 @@
         <NON_RESPONSIBILITIES><RULE>Do not authenticate external sessions, make push delivery decisions, copy document content, or grant BFE Drive document rights.</RULE></NON_RESPONSIBILITIES>
         <INPUTS>Authorized direct/group domain commands and the validated caller context plus current domain state.</INPUTS>
         <OUTPUTS>Domain outcomes and committed conversation, role, membership, or visibility-interval state.</OUTPUTS>
-        <DEPENDENCIES><DEPENDENCY contract_ref="MC36-POLICY" module_ref="DP36-M-POLICY">Authorization for the requested domain operation.</DEPENDENCY><DEPENDENCY contract_ref="MC36-PERSISTENCE" module_ref="DP36-M-PERSISTENCE">Transactional persistence and concurrency boundaries.</DEPENDENCY></DEPENDENCIES>
+        <DEPENDENCIES><DEPENDENCY contract_ref="MC36-PERSISTENCE" module_ref="DP36-M-PERSISTENCE">Transactional persistence and concurrency boundaries.</DEPENDENCY></DEPENDENCIES>
         <STATE_EFFECTS>Creates or updates conversation identity, membership, role, ownership, personal hide, and bounded membership visibility intervals under the approved transaction ordering.</STATE_EFFECTS>
         <SIDE_EFFECTS><ALLOWED>Commit an authorized domain mutation and its corresponding visibility boundary atomically.</ALLOWED><FORBIDDEN>Partially apply a membership/role mutation or leave a successful group operation without exactly one owner.</FORBIDDEN></SIDE_EFFECTS>
         <INVARIANTS><INVARIANT ref="INV32-PRESERVE"/><INVARIANT ref="INV32-NO-LEGACY"/></INVARIANTS>
